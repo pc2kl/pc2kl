@@ -62,6 +62,30 @@ Use this tool only on programs you own, or that you are authorised to maintain b
 their owner. Do not use it to obtain or redistribute other people's code, to bypass
 protections, or in breach of a licence agreement. See [LEGAL.md](LEGAL.md).
 
+## Legal disclaimer
+
+pc2kl is provided solely as an independent interoperability, maintenance, research and recovery tool.
+The project and its contributors make no representation that use of this software is lawful or permitted in every jurisdiction, contractual situation or licensing environment. Laws and contractual restrictions relating to software reverse engineering, interoperability, copyright, trade secrets and technical protection measures may vary between countries and circumstances.
+Nothing in this repository constitutes legal advice.
+By downloading, using, modifying or redistributing this software, you accept full responsibility for:
+ensuring that you have the legal right and authorisation to process the relevant .pc files;
+complying with all applicable laws, licences, contracts and confidentiality obligations;
+reviewing and validating any source code produced by the tool;
+testing recovered programs in a safe environment before deployment;
+any consequences resulting from the use of the software or its generated output.
+Recovered source code is not guaranteed to be complete, accurate, safe or functionally identical in every possible case.
+This software must not be relied upon as a safety mechanism. Industrial robots and automated machinery can cause serious injury, death, equipment damage and production losses. Recovered or modified programs should be reviewed by appropriately qualified personnel and validated using appropriate simulation, testing, risk-assessment and safety procedures before being used on real equipment.
+To the maximum extent permitted by applicable law, the authors and contributors shall not be liable for any direct, indirect, incidental, consequential or other damage arising from the use of, inability to use, or reliance upon this software or its output.
+
+For the full legal notice, please read LEGAL.md.
+
+## Contact
+
+For technical questions, compatibility reports, bug reports, responsible legal enquiries, or rights-holder concerns:
+Email: pc2klmail@gmail.com
+Please do not send confidential, proprietary or customer-owned KAREL programs unless you are authorised to disclose them.
+When reporting a compatibility issue, a minimal reproducible example is preferred whenever possible.
+
 ## License
 
 See [LICENSE](LICENSE). The software is provided "as is", without warranty of any kind.
