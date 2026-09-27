@@ -1,0 +1,9 @@
+PROGRAM T
+%NOLOCKGROUP
+VAR
+ v0 : STRING[40]
+ v1 : STRING[40]
+ res : INTEGER
+BEGIN
+ res = INDEX(v0, v1)
+END T

@@ -1,0 +1,9 @@
+PROGRAM T
+%NOLOCKGROUP
+VAR
+ v0 : REAL
+ v1 : REAL
+ res : REAL
+BEGIN
+ res = ATAN2(v0, v1)
+END T

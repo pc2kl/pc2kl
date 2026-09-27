@@ -1,0 +1,61 @@
+PROGRAM TPOSF
+%NOLOCKGROUP
+TYPE
+ s_t = STRUCTURE
+  a: INTEGER
+  p1: XYZWPR
+  b: INTEGER
+  p2: XYZWPREXT
+  c: INTEGER
+  p3: POSITION
+  d: INTEGER
+  j1: JOINTPOS1
+  e: INTEGER
+  j2: JOINTPOS2
+  f: INTEGER
+  j6: JOINTPOS6
+  g: INTEGER
+  j9: JOINTPOS9
+  h: INTEGER
+  v: VECTOR
+  k: INTEGER
+ ENDSTRUCTURE
+VAR
+ s: s_t
+ r: REAL
+ i: INTEGER
+ x: XYZWPR
+ xe: XYZWPREXT
+ p: POSITION
+ v: VECTOR
+ c: CONFIG
+BEGIN
+ i = s.b
+ i = s.c
+ i = s.d
+ i = s.e
+ i = s.f
+ i = s.g
+ i = s.h
+ i = s.k
+ r = x.x
+ r = x.y
+ r = x.z
+ r = x.w
+ r = x.p
+ r = x.r
+ c = x.config_data
+ r = xe.x
+ r = xe.ext1
+ r = xe.ext2
+ r = xe.ext3
+ c = xe.config_data
+ v = p.normal
+ v = p.orient
+ v = p.approach
+ v = p.location
+ c = p.config_data
+ r = v.x
+ r = v.y
+ r = v.z
+END TPOSF

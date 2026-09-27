@@ -1,0 +1,45 @@
+PROGRAM TOPS
+%NOLOCKGROUP
+VAR
+ v1, v2, v3: VECTOR
+ p1, p2: POSITION
+ r: REAL
+ i, j: INTEGER
+ b: BOOLEAN
+ s, s2: STRING[20]
+BEGIN
+ v3 = v1 + v2
+ v3 = v1 - v2
+ v3 = v1 * r
+ v3 = v1 / r
+ v3 = v1 # v2
+ r = v1 @ v2
+ v3 = p1 : v1
+ b = v1 = v2
+ b = v1 <> v2
+ b = s < s2
+ b = s <= s2
+ b = s > s2
+ b = s >= s2
+ v3 = -v1
+ r = v1.x
+ v1.y = r
+ r = r * i
+ r = i * r
+ b = b AND (i > 3)
+ i = i + 3 * j - 2
+ i = (i + 3) * (j - 2)
+ i = i - (j - 2)
+ i = i - j - 2
+ r = r / (r - 1.0)
+ b = NOT (b OR (i = 2))
+ i = -(i + j)
+ s = s + 'x' + s2
+ b = (s = 'abc')
+ r = -1.5
+ i = 2147483647
+ i = -2147483647 - 1
+ r = 1.0E-6
+ r = 123456.7
+ r = 1.0E20
+END TOPS

@@ -1,0 +1,44 @@
+PROGRAM TMISC5
+%NOLOCKGROUP
+TYPE
+ rec_t = STRUCTURE
+  b1 : BYTE
+  sh : SHORT
+  n : INTEGER
+ ENDSTRUCTURE
+VAR
+ i : INTEGER
+ b : BOOLEAN
+ f : FILE
+ rc : rec_t
+ ab : ARRAY[4] OF BYTE
+ ash : ARRAY[4] OF SHORT
+ prog, vname : STRING[12]
+ROUTINE takeint(n : INTEGER)
+BEGIN
+ i = n
+END takeint
+ROUTINE loopdown(n : INTEGER)
+BEGIN
+ FOR n = 3 DOWNTO 1 DO
+  i = i + n
+ ENDFOR
+END loopdown
+BEGIN
+ loopdown(2)
+ rc.b1 = 3
+ rc.sh = 300
+ i = rc.b1 + rc.sh
+ ab[2] = 7
+ ash[3] = 1000
+ i = ab[2] + ash[3]
+ DOUT[1] = TRUE
+ DOUT[i] = b
+ GOUT[2] = 5
+ AOUT[1] = i
+ RDO[1] = FALSE
+ PULSE DOUT[2] FOR 100
+ PULSE DOUT[3] FOR 50 NOWAIT
+ CANCEL FILE f
+ takeint(BYNAME(prog, vname, i))
+END TMISC5

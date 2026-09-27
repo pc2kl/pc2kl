@@ -1,0 +1,27 @@
+Aller-retour pc -> kl -> pc : 5074 programmes
+  IDENTIQUE      5074
+
+Par version :
+  V10.10-1   {'IDENTIQUE': 258}
+  V10.13-1   {'IDENTIQUE': 258}
+  V6.40-1    {'IDENTIQUE': 238}
+  V6.43-1    {'IDENTIQUE': 238}
+  V7.20-1    {'IDENTIQUE': 240}
+  V7.30-1    {'IDENTIQUE': 240}
+  V7.40-1    {'IDENTIQUE': 248}
+  V7.50-1    {'IDENTIQUE': 255}
+  V7.70-1    {'IDENTIQUE': 255}
+  V8.10-1    {'IDENTIQUE': 257}
+  V8.13-1    {'IDENTIQUE': 257}
+  V8.20-1    {'IDENTIQUE': 258}
+  V8.23-1    {'IDENTIQUE': 259}
+  V8.30-1    {'IDENTIQUE': 259}
+  V8.33-1    {'IDENTIQUE': 259}
+  V8.36-1    {'IDENTIQUE': 259}
+  V9.10-1    {'IDENTIQUE': 259}
+  V9.16-1    {'IDENTIQUE': 259}
+  V9.30-1    {'IDENTIQUE': 259}
+  V9.40-1    {'IDENTIQUE': 259}
+
+Détail des écarts :
+

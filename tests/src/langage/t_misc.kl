@@ -1,0 +1,87 @@
+PROGRAM TMISC
+%NOLOCKGROUP
+%STACKSIZE = 3000
+%PRIORITY = 60
+TYPE
+ rec_t = STRUCTURE
+   a: INTEGER
+   b: REAL
+   c: STRING[8]
+   d: ARRAY[3] OF INTEGER
+   x: XYZWPR
+ ENDSTRUCTURE
+VAR
+ g: INTEGER
+ gs: STRING[20]
+ gr: REAL
+ gb: BOOLEAN
+ ga: ARRAY[5] OF INTEGER
+ grr: rec_t
+ gar: ARRAY[3] OF rec_t
+ gm: ARRAY[2,3] OF REAL
+ f: FILE
+ ext IN CMOS: INTEGER
+ gx: XYZWPR
+ROUTINE fpos(r: rec_t): XYZWPR
+BEGIN
+ RETURN(r.x)
+END fpos
+ROUTINE fstr(n: INTEGER): STRING
+VAR
+ t: STRING[10]
+BEGIN
+ CNV_INT_STR(n, 0, 0, t)
+ RETURN(t)
+END fstr
+ROUTINE proc(a: ARRAY OF INTEGER; VAR_r: rec_t; m: ARRAY[*,*] OF REAL)
+VAR
+ k: INTEGER
+ lr: rec_t
+ la: ARRAY[4] OF STRING[6]
+BEGIN
+ FOR k = 1 TO ARRAY_LEN(a) DO
+   a[k] = k * 2
+ ENDFOR
+ VAR_r.a = 1
+ VAR_r.d[2] = 3
+ lr = VAR_r
+ la[2] = 'abc'
+ m[1,2] = 1.5
+ gs = la[2]
+END proc
+BEGIN
+ USING grr DO
+   a = 5
+   b = 2.5
+ ENDUSING
+ USING gar[2] DO
+   c = 'x'
+ ENDUSING
+ gar[1].d[3] = gar[2].d[1]
+ gx = fpos(grr)
+ gs = fstr(12)
+ proc(ga, grr, gm)
+ OPEN FILE f ('RW', 'MD:TEST.DT')
+ WRITE f ('val=', g::5, ' ', gr::8::3, CR)
+ READ f (g, gr, gs::10)
+ CLOSE FILE f
+ g = IO_STATUS(f)
+ WRITE ('Hello', CR)
+ WRITE TPPROMPT ('prompt')
+ READ (g)
+ SELECT g OF
+   CASE(1):
+     gb = TRUE
+   CASE(2,3,4):
+         g = 0
+     ENDSELECT
+     GOTO fin
+ lab2::
+ g = g + 1
+ IF g < 10 THEN
+   GOTO lab2
+ ENDIF
+ fin::
+ ext = g
+ RETURN
+END TMISC

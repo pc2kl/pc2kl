@@ -1,0 +1,30 @@
+PROGRAM TOPS3
+%NOLOCKGROUP
+VAR
+ i, j : INTEGER
+ r, r2 : REAL
+ b : BOOLEAN
+ s, s2 : STRING[20]
+ v1, v2 : VECTOR
+BEGIN
+ b = i <> j
+ b = i >= j
+ i = i DIV j
+ i = i MOD j
+ i = NOT j
+ i = j AND 5
+ i = j OR 6
+ b = r = r2
+ b = r <> r2
+ b = r < r2
+ b = r <= r2
+ b = r > r2
+ b = r >= r2
+ b = s <> s2
+ b = s = s2
+ b = v1 <> v2
+ r = r - r2
+ r = -r
+ r = r * 2
+ i = i - 1
+END TOPS3

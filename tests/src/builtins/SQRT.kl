@@ -1,0 +1,8 @@
+PROGRAM T
+%NOLOCKGROUP
+VAR
+ v0 : REAL
+ res : REAL
+BEGIN
+ res = SQRT(v0)
+END T

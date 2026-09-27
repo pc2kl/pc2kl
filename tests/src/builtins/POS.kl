@@ -1,0 +1,14 @@
+PROGRAM T
+%NOLOCKGROUP
+VAR
+ v0 : REAL
+ v1 : REAL
+ v2 : REAL
+ v3 : REAL
+ v4 : REAL
+ v5 : REAL
+ v6 : CONFIG
+ res : XYZWPR
+BEGIN
+ res = POS(v0, v1, v2, v3, v4, v5, v6)
+END T

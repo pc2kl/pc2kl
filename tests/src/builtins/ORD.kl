@@ -1,0 +1,9 @@
+PROGRAM T
+%NOLOCKGROUP
+VAR
+ v0 : STRING[40]
+ v1 : INTEGER
+ res : INTEGER
+BEGIN
+ res = ORD(v0, v1)
+END T

@@ -1,0 +1,37 @@
+PROGRAM TMOT
+VAR
+ p1, p2: POSITION
+ x1, x2: XYZWPR
+ j1: JOINTPOS
+ pth: PATH
+ i: INTEGER
+ r: REAL
+ b: BOOLEAN
+BEGIN
+ $GROUP[1].$MOTYPE = LINEAR
+ $GROUP[1].$SPEED = 200
+ $GROUP[1].$TERMTYPE = FINE
+ MOVE TO p1
+ MOVE TO x1 NOWAIT
+ MOVE NEAR p1 BY 50.0
+ MOVE AWAY 100.0
+ MOVE RELATIVE x1
+ MOVE ABOUT p1.normal BY 10.0
+ MOVE AXIS 1 BY 10.0
+ MOVE ALONG pth
+ MOVE ALONG pth[2..3]
+ MOVE TO p1 VIA p2
+ x1 = CURPOS(0,0)
+ j1 = CURJPOS(0,0)
+ p1 = x1
+ x1 = p1
+ p2 = p1:p2
+ p2 = INV(p1)
+ x1 = POS(1.0,2.0,3.0,0.0,0.0,0.0,x1.config_data)
+ UNPOS(x1, r, r, r, r, r, r, x1.config_data)
+ b = p1 >=< p2
+ r = p1.location.x
+ p1.location = p2.location
+ x2 = x1
+ j1 = j1
+END TMOT

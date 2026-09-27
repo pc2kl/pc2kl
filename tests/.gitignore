@@ -1,0 +1,9 @@
+# Fichiers produits localement par les scripts (non distribués : ils contiennent des
+# sorties du traducteur FANUC et se régénèrent avec une licence).
+pc/
+log/
+roundtrip/
+versions_installees.txt
+*.zip
+manual_builtins.json
+prog/

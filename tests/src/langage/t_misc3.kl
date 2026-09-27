@@ -1,0 +1,68 @@
+PROGRAM TMISC3
+%NOLOCKGROUP
+%COMMENT = 'Test 3'
+CONST
+ MAXN = 10
+ PI2 = 6.2831
+ NAME = 'ABC'
+VAR
+ g, st: INTEGER
+ s1, s2: STRING[32]
+ sa: ARRAY[4] OF STRING[16]
+ ia: ARRAY[MAXN] OF INTEGER
+ b: BOOLEAN
+ r: REAL
+ prog_i FROM other: INTEGER
+ROUTINE fact(n: INTEGER): INTEGER
+BEGIN
+ IF n <= 1 THEN
+   RETURN(1)
+ ENDIF
+ RETURN(n * fact(n - 1))
+END fact
+ROUTINE isok(n: INTEGER): BOOLEAN
+BEGIN
+ RETURN((n > 0) AND (n < MAXN))
+END isok
+ROUTINE nothing
+BEGIN
+END nothing
+ROUTINE vloc
+VAR
+ v: VECTOR
+BEGIN
+ v.x = 1.0
+ r = v.y
+END vloc
+BEGIN
+ g = fact(5)
+ IF isok(g) OR (g = 0) THEN
+   g = 1
+ ENDIF
+ WHILE isok(g) DO
+   g = g + 1
+ ENDWHILE
+ CALL_PROG('OTHER', st)
+ CALL_PROGLIN('OTHER', 3, st, FALSE)
+ s1 = NAME
+ r = PI2
+ s2 = SUB_STR(s1, 2, STR_LEN(s1) - 1)
+ sa[g] = s1 + s2
+ ia[ia[1]] = ia[2]
+ CNV_STR_INT(sa[2], g)
+ GET_VAR(g, 'OTHER', 'X', r, st)
+ SET_VAR(g, 'OTHER', 'Y', s1, st)
+ SET_VAR(g, '*SYSTEM*', '$MCR.$GENOVERRIDE', 50, st)
+ prog_i = 3
+ nothing
+ vloc
+ b = UNINIT(r)
+ IF NOT UNINIT(g) THEN
+   g = 0
+ ENDIF
+ g = INDEX(s1, 'B')
+ s1 = CHR(ORD(s2, 1) + 1)
+ g = ROUND(1.5) + TRUNC(r)
+ r = SQRT(r) + SIN(r) * COS(r) / TAN(r) + ATAN2(r, 1.0) + ASIN(0.5) + ACOS(0.5) + EXP(1.0) + LN(2.0)
+ ABORT
+END TMISC3

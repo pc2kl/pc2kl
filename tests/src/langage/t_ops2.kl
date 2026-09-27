@@ -1,0 +1,14 @@
+PROGRAM TOPS2
+%NOLOCKGROUP
+VAR
+ v1, v3: VECTOR
+ r: REAL
+ i: INTEGER
+BEGIN
+ v3 = v1 * i
+ v3 = i * v1
+ v3 = r * v1
+ v3 = v1 / i
+ i = TRUNC(r)
+ r = ABS(r)
+END TOPS2

@@ -1,0 +1,46 @@
+PROGRAM TMISC2
+%NOLOCKGROUP
+VAR
+ g: INTEGER
+ gx: XYZWPR
+ gp: POSITION
+ gj: JOINTPOS
+ gs: STRING[20]
+ gv: VECTOR
+ROUTINE p1(x: XYZWPR; p: POSITION; j: JOINTPOS; n: INTEGER; s: STRING; v: VECTOR)
+VAR
+ lx: XYZWPR
+ lp: POSITION
+ lv: VECTOR
+ i: INTEGER
+ ls: STRING[5]
+BEGIN
+ lx = x
+ x = lx
+ lp = p
+ p = lp
+ lv = v
+ v = lv
+ j = gj
+ x.x = 1.0
+ lx.y = x.z
+ FOR n = 1 TO 3 DO
+   g = g + n
+ ENDFOR
+ FOR i = 3 DOWNTO 1 DO
+   g = g + i
+ ENDFOR
+ ls = SUB_STR(s, 1, 2)
+ s = 'q'
+ g = ORD(s, 1)
+ WRITE (x, CR)
+ WRITE (lp)
+ READ (lx)
+ gs = s + ls
+END p1
+BEGIN
+ p1(gx, gp, gj, g, gs, gv)
+ WRITE (gx, gp, gj, gv)
+ WRITE (1.5, TRUE, -3)
+ READ (gx, gs)
+END TMISC2
