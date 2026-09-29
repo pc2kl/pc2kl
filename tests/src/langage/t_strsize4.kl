@@ -1,0 +1,51 @@
+PROGRAM t_strsize4
+%NOLOCKGROUP
+TYPE
+  str2_t = STRING[2]
+  node_t = STRUCTURE
+    ns : STRING[2]
+    ni : INTEGER
+  ENDSTRUCTURE
+  hdr_t = STRUCTURE
+    hs : STRING[3]
+    hi : INTEGER
+  ENDSTRUCTURE
+VAR
+  al : str2_t
+  i : INTEGER
+  s2 : STRING[2]
+  pth : PATH NODEDATA = node_t
+  pth2 : PATH PATHHEADER = hdr_t, NODEDATA = node_t
+ROUTINE r3
+VAR
+  a3 : ARRAY[2,3,4] OF STRING[2]
+  sa : STRING[2]
+  m2 : ARRAY[2,3] OF INTEGER
+  sb : STRING[2]
+  m3 : ARRAY[2,2,2] OF INTEGER
+  sc : STRING[2]
+  m4 : ARRAY[3,5] OF STRING[1]
+  sd : STRING[2]
+  la : str2_t
+  k : INTEGER
+BEGIN
+  k = 5
+  sa = 'ab'
+  sb = sa
+  sc = sb
+  sd = sc
+  la = sd
+  a3[2,3,4] = sa
+  m2[2,3] = k
+  m3[2,2,2] = k
+  m4[3,5] = 'a'
+END r3
+BEGIN
+  al = 'ab'
+  s2 = pth[2].ns
+  pth[i].ni = 3
+  i = PATH_LEN(pth)
+  pth2.hs = 'abc'
+  pth2[1].ns = pth2.hs
+  r3
+END t_strsize4

@@ -24,6 +24,8 @@ INTRINSICS = {int(k): v for k, v in _T['intrinsics'].items()}
 PORTS = {int(k): v for k, v in _T['ports'].items()}
 PORT_KIND = {n: ('int' if n in _T['int_ports'] else 'bool') for n in PORTS.values()}
 PREDEF_FILES = {int(k): v for k, v in _T['predef_files'].items()}
+WITH_IDS = {int(k): tuple(v) for k, v in _T['with_ids'].items()}   # clauses WITH d'un MOVE
+ENUMS = {k: {int(a): b for a, b in v.items()} for k, v in _T['enums'].items()}   # MOTYPE_E, TERMTYPE_E...
 
 # ---------------------------------------------------------------- désassemblage
 
@@ -157,6 +159,7 @@ class Motion(E):
     def __init__(self, grp):
         E.__init__(self, '<MOVE>')
         self.grp = grp; self.parts = []; self.nowait = False
+        self.withs = []            # (nom système, groupe, valeur)
 
 
 class CondN(E):
@@ -393,6 +396,15 @@ class Decompiler:
         if idx > 0 and idx in r.locals and r.locals[idx][1] is None and kind in ('int', 'real', 'bool'):
             r.locals[idx][1] = ({'int': 0x10, 'real': 0x11, 'bool': 0x12}[kind], [])
 
+    def enum_name(self, ty, v):
+        """constante d'un type énuméré système ($MOTYPE = LINEAR...) ; None sinon"""
+        if not isinstance(v, Const) or not ty:
+            return None
+        code = ty if isinstance(ty, int) else ty[0]
+        if code >> 8 != 0x11 or (code & 0xff) >= len(self.pc.tdefs):
+            return None
+        return ENUMS.get(self.pc.tdefs[code & 0xff]['name'], {}).get(v.raw)
+
     # ------------------------------------------------------------ helpers
     def labpos(self, n):
         return self.labels[n] if n < len(self.labels) else None
@@ -568,6 +580,9 @@ class Decompiler:
                         assert self.ins[k].op == 0x42
                         k += 1
                         nk = self.labidx(nxt)
+                        if nk is None:           # étiquette hors du code décodé (opcode inconnu plus loin)
+                            self.warn.append('SELECT @%04x : étiquette %d introuvable' % (y.off, nxt))
+                            nk = end
                         # corps jusqu'à 7a Lend juste avant nk
                         be = nk - 1 if self.ins[nk - 1].op == 0x7a else nk
                         if self.ins[nk - 1].op == 0x7a:
@@ -758,6 +773,18 @@ class Decompiler:
                 e.multi = ((bty[0] >> 13) & 3) - 1
                 e.ety = ety; e.ty = None; e.kind = None
             push(e); return
+        if op == 0x98:                             # en-tête de PATH : pth.champ
+            base = pop()
+            bty = base.ty if isinstance(base, E) else None
+            hty = tc.path_header(bty) if bty else None
+            e = E(txt(base), PREC_ATOM, tc.kind(hty) if hty else None, hty, True)
+            push(e); return
+        if op == 0x99:                             # noeud de PATH : pth[i]
+            idx = pop(); base = pop()
+            bty = base.ty if isinstance(base, E) else None
+            nty = tc.path_node(bty) if bty else None
+            s = '%s[%s]' % (txt(base), txt(idx, 'int'))
+            push(E(s, PREC_ATOM, tc.kind(nty) if nty else None, nty, True)); return
         if op == 0x32:                             # champ
             base = pop()
             off = x.u16()
@@ -781,7 +808,8 @@ class Decompiler:
         if op in (0x35, 0xb2, 0xb4, 0x61, 0x5d):   # stockage via adresse
             a = self.field0(pop(), op); v = pop()
             k = a.kind if isinstance(a, E) else None
-            emit('%s = %s' % (txt(a), txt(v, k)), x.off); return
+            en = self.enum_name(a.ty if isinstance(a, E) else None, v)
+            emit('%s = %s' % (txt(a), en or txt(v, k)), x.off); return
         # ports
         if op == 0x19:
             idx = pop(); pn = PORTS.get(x.u8(), 'PORT_%02X' % x.u8())
@@ -829,6 +857,31 @@ class Decompiler:
         # mouvement
         if op == 0x01:
             push(Motion(x.u16())); return
+        if op == 0x02:                             # clause WITH : valeur, groupe -> 02 id
+            mi = max((j for j in range(len(st)) if isinstance(st[j], Motion)), default=None)
+            if mi is None or len(st) - mi < 3:
+                return False
+            g = st.pop(); v = st.pop()
+            nm, k = WITH_IDS.get(x.u8(), ('$WITH_%d' % x.u8(), None))
+            if k in ENUMS and isinstance(v, Const) and v.raw in ENUMS[k]:
+                vt = ENUMS[k][v.raw]
+            else:
+                vt = txt(v, k if k in ('int', 'real', 'bool') else ('int' if k in ENUMS else None))
+            gn = g.raw if isinstance(g, Const) else txt(g, "int")
+            st[mi].withs.append((nm, gn, vt))
+            return
+        if op == 0x05:                             # masque de groupes après les clauses WITH
+            # jamais produit par ktrans dans nos tests (ni directive, ni robot.ini) : ignoré,
+            # sans effet sur la recompilation mais le .pc recompilé sera 3 octets plus court
+            self.warn.append('instruction 05 %04x @%04x ignorée (non reproductible avec ktrans)' % (x.u16(), x.off))
+            return
+        if op == 0x0c:                             # MOVE TO noeud de PATH : pth[i]
+            mi = max((j for j in range(len(st)) if isinstance(st[j], Motion)), default=None)
+            if mi is None or len(st) - mi < 3:
+                return False
+            m = st[mi]; args = st[mi + 1:]; del st[mi + 1:]
+            m.parts.append('MOVE TO %s[%s]' % (txt(args[0]), txt(args[1], 'int')))
+            return
         if op in (0x06, 0x07, 0x08, 0x0a):
             mi = max((j for j in range(len(st)) if isinstance(st[j], Motion)), default=None)
             if mi is None:
@@ -868,6 +921,10 @@ class Decompiler:
             del st[mi + 1:]
             m = st.pop(mi)
             head = ' '.join(m.parts) + (' NOWAIT' if m.nowait else '')
+            if m.withs:
+                head = 'WITH %s %s' % (', '.join(
+                    '%s = %s' % (n if (g == 1 and m.grp == 1) else '$GROUP[%s].%s' % (g, n), v)
+                    for (n, g, v) in m.withs), head)
             if conds:                              # conditions locales : MOVE ..., WHEN ... ENDMOVE
                 lines = [head + ',']
                 for c in conds:
@@ -1387,8 +1444,9 @@ def decompile_file(path, keep_lines=True, asm=False):
     pc = PC(load(path))
     d = Decompiler(pc, path).run()
     src = d.emit_source(keep_lines)
-    if d.warn:
-        src += '\n-- Avertissements du décompilateur :\n' + '\n'.join('--   ' + w for w in d.warn[:50]) + '\n'
+    warn = list(dict.fromkeys(d.warn))            # un bloc peut être analysé deux fois
+    if warn:
+        src += '\n-- Avertissements du décompilateur :\n' + '\n'.join('--   ' + w for w in warn[:50]) + '\n'
     return src, d
 
 
@@ -1411,7 +1469,18 @@ def main():
         try:
             src, d = decompile_file(p, not a.no_lines)
         except Exception as e:
-            print('ERREUR %s : %r' % (p, e), file=sys.stderr)
+            msg = repr(e)
+            try:                                   # diagnostic : opcode jamais observé ?
+                ins = disasm(PC(load(p)).pcode)
+                if ins and ins[-1].op == -1:
+                    msg = ('opcode %02X inconnu à @%04x : construction absente du corpus de test, '
+                           'la suite du programme ne peut pas être décodée (%r)' % (ins[-1].b[0], ins[-1].off, e))
+                    if a.asm:
+                        for x in ins:
+                            print(x)
+            except Exception:
+                pass
+            print('ERREUR %s : %s' % (p, msg), file=sys.stderr)
             continue
         if a.asm:
             for x in d.ins:

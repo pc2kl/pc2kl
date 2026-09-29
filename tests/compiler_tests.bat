@@ -30,9 +30,12 @@ for %%V in (%VERS%) do (
     if not exist "%ROOT%\pc\%%V\%%D" mkdir "%ROOT%\pc\%%V\%%D"
     if not exist "%ROOT%\log\%%V\%%D" mkdir "%ROOT%\log\%%V\%%D"
     pushd "%ROOT%\pc\%%V\%%D"
+    REM fichiers inclus : ktrans les cherche dans le dossier courant
+    if exist "%ROOT%\src\include\*.kl" copy /y "%ROOT%\src\include\*.kl" . > nul
     for %%F in ("%ROOT%\src\%%D\*.kl") do (
       if not exist "%ROOT%\log\%%V\%%D\%%~nF.txt" "%KTRANS%" "%%~fF" /ver %%V < nul > "%ROOT%\log\%%V\%%D\%%~nF.txt" 2>&1
     )
+    if exist "%ROOT%\src\include\*.kl" for %%I in ("%ROOT%\src\include\*.kl") do del /q "%%~nxI"
     popd
   )
 )

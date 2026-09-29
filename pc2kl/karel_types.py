@@ -38,6 +38,8 @@ class TypeCtx:
         nd = (hi >> 5) & 3
         base_hi = hi & 0x1f
         base = self._base(base_hi, lo)
+        if code == 0x001f and len(dims) == 3:
+            return self.path_name(dims)
         if nd:
             ds = ','.join(str(d) if d else '' for d in dims) if any(dims) else ''
             if ds:
@@ -46,6 +48,27 @@ class TypeCtx:
                 return 'ARRAY[%s] OF %s' % (','.join(['*'] * nd), base)
             return 'ARRAY OF %s' % base
         return base
+
+    def path_name(self, dims):
+        """PATH : dims = [en-tête standard, type PATHHEADER (0 si absent), type NODEDATA] ;
+        seuls les types utilisateur (non système) sont déclarés."""
+        parts = []
+        for kw, t in (('PATHHEADER', dims[1]), ('NODEDATA', dims[2])):
+            hi, lo = t >> 8, t & 0xff
+            if hi == 0x11 and lo < len(self.types) and not self.types[lo].get('system'):
+                parts.append('%s = %s' % (kw, self.types[lo]['name']))
+        return 'PATH' + (' ' + ', '.join(parts) if parts else '')
+
+    def path_node(self, t):
+        """type d'un noeud de PATH (pth[i])"""
+        if isinstance(t, tuple) and t[0] == 0x001f and len(t[1]) == 3:
+            return (t[1][2], [])
+        return None
+
+    def path_header(self, t):
+        if isinstance(t, tuple) and t[0] == 0x001f and len(t[1]) == 3:
+            return (t[1][1] or t[1][0], [])
+        return None
 
     def _base(self, hi, lo):
         if hi == 0:
@@ -101,10 +124,12 @@ class TypeCtx:
         hi, lo = code >> 8, code & 0xff
         nd = (hi >> 5) & 3
         if nd:
-            n = 1
-            for d in dims:
-                n *= d
-            return 4 + n * self.size(self.elem(t))
+            # tableaux imbriqués : ARRAY[d1,d2,...] = en-tête (4) + d1 x ARRAY[d2,...]
+            # (observé sur les locales : [2,3] OF INTEGER = 36, [2,2,2] OF INTEGER = 60)
+            n = self.size(self.elem(t))
+            for d in reversed(dims or [0]):
+                n = 4 + d * n
+            return n
         if hi == 0:
             return SIZE_SIMPLE.get(lo, 4)
         if hi == 0x1f:

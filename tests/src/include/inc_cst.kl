@@ -1,0 +1,8 @@
+-- constantes partagees (fichier inclus)
+CONST
+  C_MAX = 10
+  C_MIN = 3
+  C_NAME = 'hello'
+  C_PI = 3.14
+  C_NEG = -5
+  C_ON = TRUE

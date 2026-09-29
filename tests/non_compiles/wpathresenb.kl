@@ -1,0 +1,10 @@
+PROGRAM wpathresenb
+%NOLOCKGROUP
+VAR
+  p : POSITION
+  q : POSITION
+  i : INTEGER
+  r : REAL
+BEGIN
+  WITH $PATHRES_ENB = TRUE MOVE TO p
+END wpathresenb

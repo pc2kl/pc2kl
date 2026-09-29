@@ -45,4 +45,12 @@ OPLEN = {
  0xB3: (1, 'lecture SHORT via adresse'), 0xB4: (1, 'écriture SHORT via adresse'), 0x1A: (2, 'DOUT[1] = TRUE : 1a pp'),
  0x0F: (2, 'PULSE : 0f pp'), 0x1F: (2, 'PULSE ... NOWAIT : 1f pp'), 0xA3: (1, 'CANCEL FILE'),
  0x24: (3, 'BYNAME : 24 tttt'), 0x26: (2, 'fin d\'appel avec BYNAME : 26 nn'),
+ 0x02: (2, 'WITH $SPEED = 500 MOVE TO p : valeur, groupe, 02 ii (w_*.kl)'),
+ 0x0C: (1, 'MOVE TO pth[1] : destination noeud de PATH (w_path.kl)'),
+ 0x98: (1, 'pth2.hs = ... : en-tête de PATH (t_strsize4.kl)'),
+ 0x99: (1, 'pth[i].ns = ... : noeud de PATH (t_strsize2.kl)'),
+ # 05 : jamais produit par ktrans sur nos sources (ni directive, ni robot.ini) ; observé
+ # uniquement dans un .pc transmis par un utilisateur, après des clauses WITH :
+ # 05 mmmm (masque de groupes). Longueur confirmée par le découpage exact de ce fichier.
+ 0x05: (3, 'masque de groupes après WITH : 05 mmmm (hors corpus)'),
 }

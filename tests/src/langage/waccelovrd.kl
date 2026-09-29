@@ -1,0 +1,10 @@
+PROGRAM waccelovrd
+%NOLOCKGROUP
+VAR
+  p : POSITION
+  q : POSITION
+  i : INTEGER
+  r : REAL
+BEGIN
+  WITH $ACCEL_OVRD = 100 MOVE TO p
+END waccelovrd

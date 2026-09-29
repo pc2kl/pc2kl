@@ -1,0 +1,10 @@
+PROGRAM wuseconfig
+%NOLOCKGROUP
+VAR
+  p : POSITION
+  q : POSITION
+  i : INTEGER
+  r : REAL
+BEGIN
+  WITH $USE_CONFIG = TRUE MOVE TO p
+END wuseconfig

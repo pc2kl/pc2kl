@@ -11,6 +11,7 @@ licensed KAREL translator (`ktrans`); they are not distributed (see `.gitignore`
 | Path | Content |
 |---|---|
 | `src/langage/` | hand-written programs, one language feature per line (expressions, control flow, conditions, motion, files, ports, positions…) |
+| `src/include/` | files included by `%INCLUDE` in some tests (copied next to the output by `compiler_tests.bat`) |
 | `src/builtins/` | one program per documented built-in routine, generated from the manual's syntax (`outils/gen_builtins.py`, `outils/gen_builtins2.py`) |
 | `non_compiles/` | test sources the translator rejected (keywords, option packages not installed, invalid tests); kept for completeness |
 | `outils/` | analysis, derivation and validation scripts (Python 3, no dependency) |
@@ -23,7 +24,9 @@ licensed KAREL translator (`ktrans`); they are not distributed (see `.gitignore`
 
 1. **Test sources** (`src/`) are written from the KAREL reference manual. The manual
    itself is not distributed; `outils/parse_manual.py` extracts the built-in syntax
-   from the user's own copy.
+   from the user's own copy. The names of motion system variables and of their
+   enumerated values used in `w*.kl` come from the public system variable reference;
+   every value used by the decoder is the one the translator actually produced.
 2. **Compilation** (`compiler_tests.bat`, run on the licensed PC) of every source with
    every installed translator version (20 versions, V6.40 to V10.13) → `pc/`, `log/`.
 3. **Comparative analysis**: `analyse/segments_<version>.txt` lists, for each source
@@ -35,7 +38,8 @@ licensed KAREL translator (`ktrans`); they are not distributed (see `.gitignore`
 4. **Table derivation** (`outils/derive_tables.py` → `../pc2kl/karel_tables.json`,
    report in `rapport_derivation.txt`): I/O port codes (`port_*.kl`), predefined files
    (`file_*.kl`), built-in function numbers and signatures (`src/builtins`), position
-   and vector field offsets (`t_posfields.kl`).
+   and vector field offsets (`t_posfields.kl`), `WITH` clause ids (`w*.kl`) and
+   enumerated values of motion system variables (`w_enum.kl`).
 5. **Round-trip validation**: every compiled test is decompiled with `pc2kl`
    (`outils/decompiler_tout.py`), the result is recompiled with the *same* translator
    version (`recompiler_decompiles.bat`), and the new `.pc` is compared with the

@@ -1,0 +1,76 @@
+PROGRAM t_strsize
+%NOLOCKGROUP
+TYPE
+  rec_s = STRUCTURE
+    fa : STRING[2]
+    fb : STRING[3]
+    fn : INTEGER
+    fc : STRING[1]
+  ENDSTRUCTURE
+VAR
+  s1 : STRING[1]
+  s2 : STRING[2]
+  s3 : STRING[3]
+  s4 : STRING[4]
+  s5 : STRING[5]
+  s6 : STRING[6]
+  s7 : STRING[7]
+  s9 : STRING[9]
+  s16 : STRING[16]
+  s17 : STRING[17]
+  s100 : STRING[100]
+  s127 : STRING[127]
+  s128 : STRING[128]
+  s200 : STRING[200]
+  s254 : STRING[254]
+  a1 : ARRAY[4] OF STRING[1]
+  a2 : ARRAY[2] OF STRING[2]
+  a3 : ARRAY[3] OF STRING[3]
+  a4 : ARRAY[2] OF STRING[4]
+  a5 : ARRAY[2,3] OF STRING[5]
+  rs : rec_s
+  ars : ARRAY[2] OF rec_s
+ROUTINE r_loc(p : STRING) : STRING
+VAR
+  l1 : STRING[1]
+  l2 : STRING[2]
+  l3 : STRING[3]
+  l4 : STRING[4]
+  la : ARRAY[2] OF STRING[2]
+  lb : ARRAY[3] OF STRING[3]
+BEGIN
+  l1 = p
+  l2 = p
+  l3 = p
+  l4 = p
+  la[1] = l2
+  lb[2] = l3
+  RETURN(l3)
+END r_loc
+BEGIN
+  s1 = 'a'
+  s2 = 'ab'
+  s3 = 'abc'
+  s4 = 'abcd'
+  s5 = 'abcde'
+  s6 = s5
+  s7 = s6
+  s9 = s7
+  s16 = s9
+  s17 = s16
+  s100 = s17
+  s127 = s100
+  s128 = s127
+  s200 = s128
+  s254 = s200
+  a1[1] = s1
+  a2[1] = s2
+  a3[2] = s3
+  a4[1] = s4
+  a5[2,3] = s5
+  rs.fa = s2
+  rs.fb = s3
+  rs.fc = s1
+  ars[2].fa = s2
+  s3 = r_loc(s2)
+END t_strsize

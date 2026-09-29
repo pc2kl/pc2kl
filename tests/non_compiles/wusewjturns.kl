@@ -1,0 +1,10 @@
+PROGRAM wusewjturns
+%NOLOCKGROUP
+VAR
+  p : POSITION
+  q : POSITION
+  i : INTEGER
+  r : REAL
+BEGIN
+  WITH $USE_WJTURNS = TRUE MOVE TO p
+END wusewjturns

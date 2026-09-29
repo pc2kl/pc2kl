@@ -1,0 +1,10 @@
+PROGRAM wextspeed
+%NOLOCKGROUP
+VAR
+  p : POSITION
+  q : POSITION
+  i : INTEGER
+  r : REAL
+BEGIN
+  WITH $EXT_SPEED = 10 MOVE TO p
+END wextspeed

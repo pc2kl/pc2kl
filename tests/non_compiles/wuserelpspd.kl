@@ -1,0 +1,10 @@
+PROGRAM wuserelpspd
+%NOLOCKGROUP
+VAR
+  p : POSITION
+  q : POSITION
+  i : INTEGER
+  r : REAL
+BEGIN
+  WITH $USERELPSPD = TRUE MOVE TO p
+END wuserelpspd

@@ -1,0 +1,10 @@
+PROGRAM wuframe
+%NOLOCKGROUP
+VAR
+  p : POSITION
+  q : POSITION
+  i : INTEGER
+  r : REAL
+BEGIN
+  WITH $UFRAME = p MOVE TO p
+END wuframe

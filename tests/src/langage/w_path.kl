@@ -1,0 +1,19 @@
+PROGRAM w_path
+%NOLOCKGROUP
+TYPE
+  node2_t = STRUCTURE
+    j1 : JOINTPOS IN GROUP[1]
+    j2 : JOINTPOS IN GROUP[2]
+  ENDSTRUCTURE
+VAR
+  pth : PATH NODEDATA = node2_t
+  i : INTEGER
+  r : REAL
+BEGIN
+  pth[1].j1 = CURJPOS(0, 0, 1)
+  MOVE TO pth[1]
+  WITH $GROUP[1].$SPEED = 500, $GROUP[2].$SPEED = 300 MOVE TO pth[2]
+  WITH $GROUP[1].$MOTYPE = i, $GROUP[2].$MOTYPE = i MOVE TO pth[i]
+  MOVE ALONG pth
+  WITH $GROUP[2].$SPEED = r MOVE ALONG pth[1..2]
+END w_path

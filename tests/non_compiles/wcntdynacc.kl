@@ -1,0 +1,10 @@
+PROGRAM wcntdynacc
+%NOLOCKGROUP
+VAR
+  p : POSITION
+  q : POSITION
+  i : INTEGER
+  r : REAL
+BEGIN
+  WITH $CNT_DYN_ACC = TRUE MOVE TO p
+END wcntdynacc

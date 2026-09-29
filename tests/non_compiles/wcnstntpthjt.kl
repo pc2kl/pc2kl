@@ -1,0 +1,10 @@
+PROGRAM wcnstntpthjt
+%NOLOCKGROUP
+VAR
+  p : POSITION
+  q : POSITION
+  i : INTEGER
+  r : REAL
+BEGIN
+  WITH $CNSTNTPTHJT = TRUE MOVE TO p
+END wcnstntpthjt

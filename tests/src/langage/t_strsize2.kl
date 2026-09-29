@@ -1,0 +1,73 @@
+PROGRAM t_strsize2
+%NOLOCKGROUP
+TYPE
+  rec_a = STRUCTURE
+    fb : BYTE
+    fa : ARRAY[2] OF STRING[2]
+    fc : STRING[1]
+    fd : ARRAY[3] OF STRING[3]
+  ENDSTRUCTURE
+  node_t = STRUCTURE
+    ns : STRING[2]
+    ni : INTEGER
+  ENDSTRUCTURE
+VAR
+  c1 IN CMOS : STRING[2]
+  c2 IN DRAM : ARRAY[2] OF STRING[2]
+  c3 IN CMOS : ARRAY[2] OF STRING[1]
+  i : INTEGER
+  s1 : STRING[1]
+  s2, s2b : STRING[2]
+  s3 : STRING[3]
+  s128 : STRING[128]
+  a2, a2b : ARRAY[2] OF STRING[2]
+  a22 : ARRAY[2,2] OF STRING[2]
+  a3d : ARRAY[2,2,2] OF STRING[3]
+  ra : rec_a
+  ara : ARRAY[2] OF rec_a
+  pth : PATH NODEDATA = node_t
+  ext FROM t_strsize : STRING[2]
+ROUTINE r_arr(p : ARRAY OF STRING) : INTEGER
+BEGIN
+  RETURN(ARRAY_LEN(p))
+END r_arr
+ROUTINE r_loc2
+VAR
+  li : INTEGER
+  lb : BOOLEAN
+  l2 : STRING[2]
+  la : ARRAY[2] OF STRING[2]
+  l1 : STRING[1]
+  lr : rec_a
+  l22 : ARRAY[2,2] OF STRING[2]
+BEGIN
+  li = 1
+  l2 = 'ab'
+  la[1] = l2
+  l1 = 'a'
+  lr.fc = l1
+  lr.fa[2] = l2
+  l22[2,1] = l2
+END r_loc2
+BEGIN
+  c1 = 'ab'
+  c2[1] = c1
+  c3[2] = 'a'
+  s1 = 'a'
+  s2 = 'ab'
+  s2b = s2
+  s3 = 'abc'
+  s128 = s3
+  a2[1] = s2
+  a2b[2] = s2
+  a22[1,2] = s2
+  a3d[2,1,2] = s3
+  ra.fa[1] = s2
+  ra.fc = s1
+  ra.fd[3] = s3
+  ara[2].fa[2] = s2
+  pth[1].ns = s2
+  ext = s2
+  i = r_arr(a2)
+  r_loc2
+END t_strsize2

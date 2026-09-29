@@ -1,0 +1,10 @@
+PROGRAM wcartfltrenb
+%NOLOCKGROUP
+VAR
+  p : POSITION
+  q : POSITION
+  i : INTEGER
+  r : REAL
+BEGIN
+  WITH $CARTFLTRENB = TRUE MOVE TO p
+END wcartfltrenb

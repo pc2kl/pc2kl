@@ -1,0 +1,18 @@
+PROGRAM t_include
+%NOLOCKGROUP
+%INCLUDE inc_cst
+VAR
+  i : INTEGER
+  r : REAL
+  b : BOOLEAN
+  s : STRING[C_MAX]
+  t : ARRAY[C_MIN] OF INTEGER
+BEGIN
+  i = C_MAX
+  i = C_MIN
+  s = C_NAME
+  r = C_PI
+  i = C_NEG
+  b = C_ON
+  t[C_MIN] = C_MAX
+END t_include

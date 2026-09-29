@@ -1,0 +1,10 @@
+PROGRAM wsegtime
+%NOLOCKGROUP
+VAR
+  p : POSITION
+  q : POSITION
+  i : INTEGER
+  r : REAL
+BEGIN
+  WITH $SEG_TIME = 10 MOVE TO p
+END wsegtime

@@ -1,0 +1,24 @@
+PROGRAM t_include2
+%NOLOCKGROUP
+CONST
+  C_MAX = 10
+  C_MIN = 3
+  C_NAME = 'hello'
+  C_PI = 3.14
+  C_NEG = -5
+  C_ON = TRUE
+VAR
+  i : INTEGER
+  r : REAL
+  b : BOOLEAN
+  s : STRING[C_MAX]
+  t : ARRAY[C_MIN] OF INTEGER
+BEGIN
+  i = C_MAX
+  i = C_MIN
+  s = C_NAME
+  r = C_PI
+  i = C_NEG
+  b = C_ON
+  t[C_MIN] = C_MAX
+END t_include2

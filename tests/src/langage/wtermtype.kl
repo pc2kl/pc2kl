@@ -1,0 +1,10 @@
+PROGRAM wtermtype
+%NOLOCKGROUP
+VAR
+  p : POSITION
+  q : POSITION
+  i : INTEGER
+  r : REAL
+BEGIN
+  WITH $TERMTYPE = FINE MOVE TO p
+END wtermtype

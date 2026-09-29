@@ -1,0 +1,10 @@
+PROGRAM wcnstntpath
+%NOLOCKGROUP
+VAR
+  p : POSITION
+  q : POSITION
+  i : INTEGER
+  r : REAL
+BEGIN
+  WITH $CNSTNT_PATH = TRUE MOVE TO p
+END wcnstntpath

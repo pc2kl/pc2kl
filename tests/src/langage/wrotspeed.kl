@@ -1,0 +1,10 @@
+PROGRAM wrotspeed
+%NOLOCKGROUP
+VAR
+  p : POSITION
+  q : POSITION
+  i : INTEGER
+  r : REAL
+BEGIN
+  WITH $ROTSPEED = 10.0 MOVE TO p
+END wrotspeed

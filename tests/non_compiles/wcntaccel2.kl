@@ -1,0 +1,10 @@
+PROGRAM wcntaccel2
+%NOLOCKGROUP
+VAR
+  p : POSITION
+  q : POSITION
+  i : INTEGER
+  r : REAL
+BEGIN
+  WITH $CNT_ACCEL2 = 10 MOVE TO p
+END wcntaccel2

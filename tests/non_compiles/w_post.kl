@@ -1,0 +1,10 @@
+PROGRAM w_post
+%NOLOCKGROUP
+VAR
+  p : POSITION
+  q : POSITION
+  i : INTEGER
+  r : REAL
+BEGIN
+  MOVE TO p WITH $SPEED = 500
+END w_post

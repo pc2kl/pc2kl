@@ -1,0 +1,16 @@
+PROGRAM t_strsize3
+%NOLOCKGROUP
+%CMOSVARS
+VAR
+  s1 : STRING[1]
+  s2 : STRING[2]
+  s3 : STRING[3]
+  a2 : ARRAY[2] OF STRING[2]
+  a1 : ARRAY[3] OF STRING[1]
+BEGIN
+  s1 = 'a'
+  s2 = 'ab'
+  s3 = 'abc'
+  a2[1] = s2
+  a1[3] = s1
+END t_strsize3

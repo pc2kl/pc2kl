@@ -26,7 +26,7 @@ def log(*a):
 srcs = {}
 for d in ('langage', 'builtins'):
     for f in glob.glob(os.path.join(ROOT, 'src', d, '*.kl')):
-        srcs[(d, os.path.splitext(os.path.basename(f))[0].lower())] = open(f, encoding='latin-1').read()
+        srcs[(d, os.path.splitext(os.path.basename(f))[0].lower())] = open(f, encoding='latin-1', newline='').read()
 
 corpus = []   # (version, dir, name, src, PC)
 for f in sorted(glob.glob(os.path.join(ROOT, 'pc', '*', '*', '*.pc'))):
@@ -71,7 +71,7 @@ def lines_of(pc):
     return res
 
 def body_lines(src):
-    L = src.split('\n'); b = L.index('BEGIN') if 'BEGIN' in L else None
+    L = [l.rstrip('\r') for l in src.split('\n')]; b = L.index('BEGIN') if 'BEGIN' in L else None
     return {i + 1: l.strip() for i, l in enumerate(L) if b is not None and i > b and l.strip() and not l.strip().startswith('END')}
 
 def var_types(pc):
@@ -175,6 +175,56 @@ for ver, d, name, src, pc in corpus:
 log('positions :', json.dumps(pos))
 log('vector :', json.dumps(vector))
 
+# ---------------------------------------------------------------- 6. clauses WITH, types énumérés
+# Le type des variables système de mouvement est lu dans la table des types du .pc
+# (structure UPR_T de $GROUP) : aucun nom ni valeur n'est inventé.
+def upr_fields(pc):
+    for t in pc.tdefs:
+        if t['name'] == 'UPR_T':
+            return {fn.upper(): ft for (fn, fl, ft) in t['fields']}
+    return {}
+
+def field_kind(pc, ft):
+    code = ft[0]; hi, lo = code >> 8, code & 0xff
+    if hi == 0x11 and lo < len(pc.tdefs): return pc.tdefs[lo]['name']
+    if 1 <= hi <= 8: return 'pos'
+    return {0x10: 'int', 0x11: 'real', 0x12: 'bool', 0x17: 'int', 0x18: 'int'}.get(code, 'int')
+
+def const_of(b):
+    return {0x9c: 0, 0x9d: 1}.get(b[0], int.from_bytes(b[1:5], 'big') if b[0] == 0x2e else None)
+
+with_ids = {}; enums = {}
+RE_W = re.compile(r'(?:\$GROUP\[\s*\d+\s*\]\.)?(\$\w+)\s*=\s*([^,]+?)\s*(?=,|\bMOVE\b)', re.I)
+for ver, d, name, src, pc in corpus:
+    uf = upr_fields(pc)
+    if not uf: continue
+    bl = body_lines(src); LL = lines_of(pc)
+    for ln, txt in bl.items():
+        L = LL.get(ln, [])
+        m = re.match(r'WITH\s+(.*)\bMOVE\b', txt, re.I)
+        if m:
+            cl = RE_W.findall(m.group(1) + ' MOVE')
+            ids = [b[1] for op, b in L if op == 0x02]
+            if len(cl) != len(ids): continue
+            for (sv, val), k in zip(cl, ids):
+                sv = sv.upper()
+                kd = field_kind(pc, uf[sv]) if sv in uf else None
+                if with_ids.get(k, [sv])[0] != sv: conflicts.append(('WITH', k, with_ids[k][0], sv, ver))
+                with_ids[k] = [sv, kd]
+            continue
+        m = re.match(r'\$GROUP\[\s*\d+\s*\]\.(\$\w+)\s*=\s*([A-Z_]\w*)$', txt, re.I)
+        if m and m.group(2).upper() not in ('TRUE', 'FALSE') and m.group(1).upper() in uf:
+            tn = field_kind(pc, uf[m.group(1).upper()])
+            if tn in ('int', 'real', 'bool', 'pos') or m.group(2).upper() in var_types(pc): continue
+            cs = [const_of(b) for op, b in L if op in (0x2e, 0x9c, 0x9d)]
+            if not cs or cs[0] is None: continue
+            E = enums.setdefault(tn, {})
+            if E.get(cs[0], m.group(2).upper()) != m.group(2).upper(): conflicts.append(('enum', tn, cs[0], m.group(2), ver))
+            E[cs[0]] = m.group(2).upper()
+log(len(with_ids), 'clauses WITH :', ', '.join('%d=%s' % (k, v[0]) for k, v in sorted(with_ids.items())))
+for tn, E in sorted(enums.items()):
+    log('énuméré %s :' % tn, ', '.join('%d=%s' % kv for kv in sorted(E.items())))
+
 for c in conflicts: log('CONFLIT', c)
 json.dump({
     'source': 'Tables déduites par observation de programmes de test compilés (voir tests/)',
@@ -184,5 +234,7 @@ json.dump({
     'int_ports': sorted(int_ports),
     'predef_files': {str(k): v for k, v in sorted(files.items())},
     'pos': pos, 'vector': vector,
+    'with_ids': {str(k): v for k, v in sorted(with_ids.items())},
+    'enums': {tn: {str(k): v for k, v in sorted(E.items())} for tn, E in sorted(enums.items())},
 }, open(OUT, 'w'), indent=1, ensure_ascii=False)
 open(os.path.join(ROOT, 'rapport_derivation.txt'), 'w').write('\n'.join(rapport) + '\n')

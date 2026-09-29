@@ -1,0 +1,10 @@
+PROGRAM wdynicomp
+%NOLOCKGROUP
+VAR
+  p : POSITION
+  q : POSITION
+  i : INTEGER
+  r : REAL
+BEGIN
+  WITH $DYN_I_COMP = TRUE MOVE TO p
+END wdynicomp

@@ -2,14 +2,17 @@
  "source": "Tables déduites par observation de programmes de test compilés (voir tests/)",
  "oplen": {
   "01": 3,
+  "02": 2,
   "03": 1,
   "04": 1,
+  "05": 3,
   "06": 1,
   "07": 1,
   "08": 1,
   "09": 1,
   "0A": 2,
   "0B": 1,
+  "0C": 1,
   "0D": 1,
   "0E": 1,
   "0F": 2,
@@ -138,6 +141,8 @@
   "95": 1,
   "96": 1,
   "97": 1,
+  "98": 1,
+  "99": 1,
   "9A": 1,
   "9B": 1,
   "9C": 1,
@@ -1090,5 +1095,106 @@
    "z",
    17
   ]
+ },
+ "with_ids": {
+  "1": [
+   "$MOTYPE",
+   "MOTYPE_E"
+  ],
+  "2": [
+   "$TERMTYPE",
+   "TERMTYPE_E"
+  ],
+  "3": [
+   "$SEGTERMTYPE",
+   "TERMTYPE_E"
+  ],
+  "4": [
+   "$DECELTOL",
+   "real"
+  ],
+  "5": [
+   "$USE_CONFIG",
+   "bool"
+  ],
+  "6": [
+   "$ORIENT_TYPE",
+   "ORIENT_E"
+  ],
+  "7": [
+   "$UFRAME",
+   "pos"
+  ],
+  "8": [
+   "$UTOOL",
+   "pos"
+  ],
+  "9": [
+   "$SPEED",
+   "real"
+  ],
+  "10": [
+   "$ROTSPEED",
+   "real"
+  ],
+  "11": [
+   "$CONTAXISVEL",
+   "real"
+  ],
+  "12": [
+   "$CNSTNT_PATH",
+   "bool"
+  ],
+  "13": [
+   "$SEG_TIME",
+   "int"
+  ],
+  "14": [
+   "$USE_CARTACC",
+   "bool"
+  ],
+  "15": [
+   "$USEMAXACCEL",
+   "bool"
+  ],
+  "16": [
+   "$USERELACCEL",
+   "bool"
+  ],
+  "17": [
+   "$USETIMESHFT",
+   "bool"
+  ],
+  "18": [
+   "$ACCEL_OVRD",
+   "int"
+  ],
+  "19": [
+   "$TIME_SHIFT",
+   "int"
+  ],
+  "20": [
+   "$ACCU_NUM",
+   "int"
+  ]
+ },
+ "enums": {
+  "MOTYPE_E": {
+   "6": "JOINT",
+   "7": "LINEAR",
+   "8": "CIRCULAR"
+  },
+  "ORIENT_E": {
+   "1": "RSWORLD",
+   "2": "AESWORLD",
+   "3": "WRISTJOINT"
+  },
+  "TERMTYPE_E": {
+   "1": "FINE",
+   "2": "COARSE",
+   "3": "NOSETTLE",
+   "4": "NODECEL",
+   "5": "VARDECEL"
+  }
  }
 }

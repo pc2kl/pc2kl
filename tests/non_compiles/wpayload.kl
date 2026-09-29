@@ -1,0 +1,10 @@
+PROGRAM wpayload
+%NOLOCKGROUP
+VAR
+  p : POSITION
+  q : POSITION
+  i : INTEGER
+  r : REAL
+BEGIN
+  WITH $PAYLOAD = 1 MOVE TO p
+END wpayload

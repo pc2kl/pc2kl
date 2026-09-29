@@ -1,0 +1,9 @@
+PROGRAM w_d_lock
+%LOCKGROUP = 1
+VAR
+  p : POSITION
+  r : REAL
+BEGIN
+  WITH $SPEED = 500 MOVE TO p
+  WITH $SPEED = r, $MOTYPE = LINEAR MOVE TO p
+END w_d_lock

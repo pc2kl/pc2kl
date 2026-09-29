@@ -1,0 +1,10 @@
+PROGRAM waccunum
+%NOLOCKGROUP
+VAR
+  p : POSITION
+  q : POSITION
+  i : INTEGER
+  r : REAL
+BEGIN
+  WITH $ACCU_NUM = 1 MOVE TO p
+END waccunum

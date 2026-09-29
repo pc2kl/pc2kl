@@ -9,7 +9,7 @@ ROOT = sys.argv[1]
 S = {}
 for d in ('langage', 'builtins'):
     for s in glob.glob(os.path.join(ROOT, 'src', d, '*.kl')):
-        S[(d, os.path.basename(s)[:-3].lower())] = open(s, encoding='latin-1').read()
+        S[(d, os.path.basename(s)[:-3].lower())] = open(s, encoding='latin-1', newline='').read()
 T = {k: v[0] for k, v in OPLEN.items()}
 bad = collections.defaultdict(list); ok = 0; tot = 0
 for f in sorted(glob.glob(os.path.join(ROOT, 'pc', '*', '*', '*.pc'))):

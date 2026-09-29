@@ -1,8 +1,12 @@
-5074 programmes compilés, 20 versions
-158 longueurs d'opcode ; 5074 / 5074 programmes découpés exactement
+5864 programmes compilés, 20 versions
+163 longueurs d'opcode ; 5864 / 5864 programmes découpés exactement
 22 ports d'E/S : 01=DIN, 02=DOUT, 03=AIN, 04=AOUT, 08=RDI, 09=RDO, 0B=OPIN, 0C=OPOUT, 0E=TPIN, 0F=TPOUT, 10=WDI, 11=WDO, 12=GIN, 13=GOUT, 14=UIN, 15=UOUT, 16=LDI, 17=LDO, 18=LAI, 19=LAO, 23=FLG, 24=MRK
 synonymes : {5: ['CRTERROR', 'TPERROR'], 6: ['INPUT', 'OUTPUT']}
 9 fichiers prédéfinis : 1=TPDISPLAY, 2=TPPROMPT, 3=TPSTATUS, 4=TPFUNC, 5=TPERROR, 6=OUTPUT, 7=CRTPROMPT, 8=CRTSTATUS, 9=CRTFUNC
 27 intrinsèques (76 NN) identifiés
 positions : {"8": {"2": {"fields": {"8": ["x", 17], "12": ["y", 17], "16": ["z", 17], "20": ["w", 17], "24": ["p", 17], "28": ["r", 17], "32": ["config_data", 28]}, "size": 36}, "6": {"fields": {"8": ["x", 17], "36": ["ext1", 17], "40": ["ext2", 17], "44": ["ext3", 17], "32": ["config_data", 28]}, "size": 48}, "1": {"fields": {"8": ["normal", 19], "20": ["orient", 19], "32": ["approach", 19], "44": ["location", 19], "56": ["config_data", 28]}, "size": 60}, "9": {"base": 8, "per_axis": 4, "fields": {}}}, "4": {"2": {"fields": {"4": ["x", 17], "8": ["y", 17], "12": ["z", 17], "16": ["w", 17], "20": ["p", 17], "24": ["r", 17], "28": ["config_data", 28]}, "size": 32}, "6": {"fields": {"4": ["x", 17], "32": ["ext1", 17], "36": ["ext2", 17], "40": ["ext3", 17], "28": ["config_data", 28]}, "size": 44}, "1": {"fields": {"4": ["normal", 19], "16": ["orient", 19], "28": ["approach", 19], "40": ["location", 19], "52": ["config_data", 28]}, "size": 56}, "9": {"base": 4, "per_axis": 4, "fields": {}}}}
 vector : {"0": ["x", 17], "4": ["y", 17], "8": ["z", 17]}
+20 clauses WITH : 1=$MOTYPE, 2=$TERMTYPE, 3=$SEGTERMTYPE, 4=$DECELTOL, 5=$USE_CONFIG, 6=$ORIENT_TYPE, 7=$UFRAME, 8=$UTOOL, 9=$SPEED, 10=$ROTSPEED, 11=$CONTAXISVEL, 12=$CNSTNT_PATH, 13=$SEG_TIME, 14=$USE_CARTACC, 15=$USEMAXACCEL, 16=$USERELACCEL, 17=$USETIMESHFT, 18=$ACCEL_OVRD, 19=$TIME_SHIFT, 20=$ACCU_NUM
+énuméré MOTYPE_E : 6=JOINT, 7=LINEAR, 8=CIRCULAR
+énuméré ORIENT_E : 1=RSWORLD, 2=AESWORLD, 3=WRISTJOINT
+énuméré TERMTYPE_E : 1=FINE, 2=COARSE, 3=NOSETTLE, 4=NODECEL, 5=VARDECEL

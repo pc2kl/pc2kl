@@ -38,7 +38,7 @@ def read_type(r, withdims=True):
     nd=(hi>>5)&3
     if withdims:
         for _ in range(nd): dims.append(r.u16())
-    if t==0x001f:          # PATH : type d'en-tête, ?, type de noeud
+    if t==0x001f:          # PATH : en-tête standard, PATHHEADER (0 si absent), NODEDATA
         dims=[norm_type(r.u16()),r.u16(),norm_type(r.u16())]
     return (t,dims)
 

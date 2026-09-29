@@ -1,0 +1,10 @@
+PROGRAM wusepathacc
+%NOLOCKGROUP
+VAR
+  p : POSITION
+  q : POSITION
+  i : INTEGER
+  r : REAL
+BEGIN
+  WITH $USE_PATHACC = TRUE MOVE TO p
+END wusepathacc

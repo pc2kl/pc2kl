@@ -1,0 +1,10 @@
+PROGRAM wmaxspeed
+%NOLOCKGROUP
+VAR
+  p : POSITION
+  q : POSITION
+  i : INTEGER
+  r : REAL
+BEGIN
+  WITH $MAX_SPEED = 100 MOVE TO p
+END wmaxspeed

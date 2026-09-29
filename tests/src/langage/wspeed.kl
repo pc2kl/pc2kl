@@ -1,0 +1,10 @@
+PROGRAM wspeed
+%NOLOCKGROUP
+VAR
+  p : POSITION
+  q : POSITION
+  i : INTEGER
+  r : REAL
+BEGIN
+  WITH $SPEED = 500 MOVE TO p
+END wspeed

@@ -1,0 +1,10 @@
+PROGRAM wutool
+%NOLOCKGROUP
+VAR
+  p : POSITION
+  q : POSITION
+  i : INTEGER
+  r : REAL
+BEGIN
+  WITH $UTOOL = p MOVE TO p
+END wutool
