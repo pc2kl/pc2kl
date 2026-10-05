@@ -1277,6 +1277,7 @@ class Decompiler:
         a = pc.attr
         if pc.comment:
             add("%%COMMENT = '%s'" % pc.comment)
+        if a[1]: add('%INVISIBLE')
         if a[2]: add('%SYSTEM')
         if a[3]: add('%NOBUSYLAMP')
         m = {1: 'ERROR', 2: 'COMMAND', 4: 'TPENABLE'}
@@ -1302,7 +1303,7 @@ class Decompiler:
             add('%UNINITVARS')
             if any(v[2] == 0x00 for v in own):
                 add('-- attention : variables avec et sans indicateur UNINITVARS (0xFA) mélangées')
-        unk = [(i, a[i]) for i in (0, 1, 6, 16, 18, 19) if a[i]]
+        unk = [(i, a[i]) for i in (0, 6, 16, 18, 19) if a[i]]
         if unk:
             add('-- attributs inconnus : %s' % unk)
         if NEGCONST:

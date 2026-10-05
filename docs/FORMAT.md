@@ -28,6 +28,7 @@ All integers are big-endian.
 2. `u16` p-code size
 3. program name, `%COMMENT` text (NUL-terminated)
 4. attributes (`%STACKSIZE`, `%PRIORITY`, `%LOCKGROUP`, …): 20 bytes (19 in format 0x22)
+   (byte 1 = `%INVISIBLE`, byte 2 = `%SYSTEM`; checked with `ktrans` V6.40 to V10.13)
 5. p-code
 6. padding up to `FF`
 7. labels: `u16` count + `u32` offsets
@@ -268,9 +269,9 @@ was confirmed by compiling `w_enum.kl`.
 
 The destination of a multi-group move is a `PATH` node: `22 pth`, index, `1C`, `0C`.
 
-`05 gggg` was found only in a `.pc` sent by a user (a multi-group program with an
-unknown header attribute, byte 1 = 1), after the `WITH` clauses. No directive tested
-(`%SYSTEM`, `%DEFGROUP`, `%DELAY`, `%CRTDEVICE`, `%CMOSVARS`, `%SHADOWVARS`,
+`05 gggg` was found only in a `.pc` sent by a user (a multi-group program compiled
+with `%SYSTEM` and `%INVISIBLE`), after the `WITH` clauses. No directive tested
+(`%SYSTEM`, `%INVISIBLE`, `%DEFGROUP`, `%DELAY`, `%CRTDEVICE`, `%CMOSVARS`, `%SHADOWVARS`,
 `%UNINITVARS`, `%TPMOTION`, `%LOCKGROUP`) nor a ROBOGUIDE `robot.ini` makes `ktrans`
 produce it. It is skipped with a warning; the recompiled program is otherwise identical.
 
