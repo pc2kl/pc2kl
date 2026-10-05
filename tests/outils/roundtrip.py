@@ -2,7 +2,7 @@
 Usage : roundtrip.py <dossier pc originaux> <dossier pc recompilés> <dossier journaux> <rapport>"""
 import sys, os, glob, collections
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
-from compare_pc import compare
+from compare_pc_strict import compare   # comparateur strict (voir docs/VALIDATION.md)
 ORIG, RT, LOG, OUT = sys.argv[1:5]
 def index(root):
     d = {}
@@ -26,7 +26,7 @@ for k in sorted(O):
             err = ' | '.join(x.strip() for x in t.split('\n') if 'ERROR' in x or 'expected' in x.lower())[:200]
         lines.append('%s/%s/%s : %s %s' % (k + (st, err)))
     else:
-        d = compare(O[k], R[k])
+        d = [x for x in compare(O[k], R[k]) if not x.startswith('INFO')]
         st = 'IDENTIQUE' if not d else 'DIFFÉRENT'
         if d: lines.append('%s/%s/%s : %s %s' % (k + (st, '; '.join(d))))
     res[st] += 1; perver[k[0]][st] += 1

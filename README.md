@@ -48,9 +48,9 @@ manual, or excerpt of manual**, and no `.pc` file produced from third-party prog
 
 ## Limitations
 
-* Validated by round trip (decompile, recompile, compare) on 5,074 test programs
-  compiled with 20 translator versions, V6.40 to V10.13 — see
-  [docs/VALIDATION.md](docs/VALIDATION.md). Constructs absent from the test corpus may
+* Validated by round trip (decompile, recompile, compare) on about 300 test programs
+  compiled with 20 translator versions (5,904 `.pc` files), V6.40 to V10.13 — see
+  [docs/VALIDATION.md](docs/VALIDATION.md) for what is compared and the current results. Constructs absent from the test corpus may
   not be recognised yet; unknown opcodes are reported explicitly rather than guessed.
 * Programs using vision, force, or other option packages may produce partial output.
 * Always review and test recovered code on a simulator before running it on a robot.

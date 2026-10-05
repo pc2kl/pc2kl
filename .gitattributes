@@ -1,0 +1,10 @@
+# Normalisation : tout fichier texte est stocké en LF dans le dépôt
+* text=auto eol=lf
+
+# Scripts batch Windows : cmd.exe exige CRLF (goto/call/labels peu fiables en LF)
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binaires KAREL (p-code compilé) : jamais de conversion ni de diff texte
+*.pc  binary
+*.pyc binary

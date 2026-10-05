@@ -43,8 +43,11 @@ licensed KAREL translator (`ktrans`); they are not distributed (see `.gitignore`
 5. **Round-trip validation**: every compiled test is decompiled with `pc2kl`
    (`outils/decompiler_tout.py`), the result is recompiled with the *same* translator
    version (`recompiler_decompiles.bat`), and the new `.pc` is compared with the
-   original (`outils/compare_pc.py`, `outils/roundtrip.py`): same declarations, same
-   instruction sequence up to consistent renaming of variables, routines and labels.
+   original (`outils/compare_pc_strict.py`, `outils/roundtrip.py`): same instruction
+   sequence (globals and routines compared by name, locals up to a consistent renaming),
+   same declarations, types, routine table and configuration attributes — see
+   `../docs/VALIDATION.md`. The comparator itself is checked by mutation
+   (`outils/test_comparateur.py`).
 
 ## Reproducing
 
@@ -57,6 +60,7 @@ python outils\derive_tables.py . tables.json    :: rebuild the tables, compare w
 python outils\decompiler_tout.py                :: pc\   -> roundtrip\kl\
 recompiler_decompiles.bat                       :: roundtrip\kl\ -> roundtrip\pc\, roundtrip\log\
 python outils\roundtrip.py pc roundtrip\pc roundtrip\log roundtrip_rapport.txt
+python outils\test_comparateur.py pc\V8.33-1 compare_pc_strict   :: comparator mutation test
 ```
 
 The translator is located through the `KTRANS` environment variable, `PATH`, or the

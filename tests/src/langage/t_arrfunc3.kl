@@ -1,0 +1,23 @@
+PROGRAM TARRFUNC3
+%NOLOCKGROUP
+VAR
+ gm: ARRAY[2,3] OF INTEGER
+ROUTINE fmat(a: INTEGER): ARRAY[*,*] OF INTEGER
+VAR
+ t: ARRAY[2,3] OF INTEGER
+BEGIN
+ t[1,1] = a
+ t[2,3] = a + 1
+ RETURN(t)
+END fmat
+ROUTINE uselocal
+VAR
+ lm: ARRAY[2,3] OF INTEGER
+BEGIN
+ lm = fmat(5)
+ gm[1,1] = lm[2,3]
+END uselocal
+BEGIN
+ gm = fmat(3)
+ uselocal
+END TARRFUNC3

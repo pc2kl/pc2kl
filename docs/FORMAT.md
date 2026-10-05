@@ -35,6 +35,19 @@ All integers are big-endian.
 9. user types: `u16` count + (`u16` length + record)
 10. variables: `u16` count + (attribute, name, storage flag, type)
 11. used-variable map, routine table (name, module, offset, return type, parameter types)
+12. 3 trailing bytes: a `u16` whose meaning is not known, then `0A`. It depends on the
+    source and not only on the p-code: `t_misc.kl`, which has two `USING ... ENDUSING`
+    blocks, gives 20 more than its decompiled source (identical p-code, `USING` leaves
+    no trace); probably a size estimate made by the translator
+
+Storage flag of a variable: `00` normal, `FD` `IN CMOS`, `02` `IN SHADOW`, `FA` every
+variable of a program compiled with `%UNINITVARS` (V7.20 and later; V6.40/V6.43 store `00`).
+
+A function may return an array: the return type is declared `ARRAY OF t` or
+`ARRAY[*,*] OF t` (the translator rejects a size, e.g. `ARRAY[6] OF t`), and the routine
+table stores the type code without dimensions. The result is assigned with
+`value, 22 <destination address>, 1E nn`, where `nn` is the number of dimensions
+(`tests/src/langage/t_arrfunc.kl`, `t_arrfunc3.kl`).
 
 ## Type codes
 
@@ -46,6 +59,13 @@ the high byte give the number of array dimensions.
 
 A `PATH` (`0x001F`) is followed by three type codes: the standard header type, the
 `PATHHEADER` type (0 when absent) and the `NODEDATA` type.
+
+Format 0x22 (V6.40/V6.43) uses other base codes in the high byte: `0x08` for STRING
+(`0x1F` later) and `0x10`/`0x18` for user types (`0x11` later). This applies to every
+type code, including the three codes that follow a `PATH`. The same format does not
+emit the field instruction `32 0000` for a field at offset 0: `pth[1].j1 = …` (first
+field of a node) and `pth.hs = …` (first field of the header) compile without it, so
+the decoder restores the first field from the declared type.
 
 Size of an array (used to number local variables): arrays are nested, each level
 has a 4-byte header, so `ARRAY[d1,d2,...] OF t` = 4 + d1 x size(`ARRAY[d2,...] OF t`)
@@ -91,6 +111,7 @@ instruction boundary):
 | `1B` | 2 | WAIT FOR DIN[1] : 1b pp |
 | `1C` | 6 | MOVE TO p1 : 1c 01 xxxxxxxx |
 | `1D` | 1 | ARRAY_LEN |
+| `1E` | 2 | affectation d'un tableau renvoyé par une fonction : 1e nn (nombre de dimensions) |
 | `1F` | 2 | PULSE ... NOWAIT : 1f pp |
 | `20` | 5 | ENDFOR (TO) |
 | `21` | 6 | lecture variable : 21 ss xxxxxxxx |

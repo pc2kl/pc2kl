@@ -353,7 +353,7 @@ class Decompiler:
 
     def field0(self, a, op):
         """anciens compilateurs : l'accès au 1er champ (offset 0) n'émet pas d'op 32"""
-        if not isinstance(a, E) or op in (0x5d,):
+        if not isinstance(a, E):
             return a
         for _ in range(6):
             ty = a.ty
@@ -364,6 +364,8 @@ class Decompiler:
             k = self.tc.kind(ty)
             if k not in ('vec', 'struct', 'pos'):
                 return a
+            if op == 0x5d and k != 'struct':       # 5D écrit une position entière : on ne descend que dans
+                return a                           # une STRUCTURE (1er champ d'un noeud de PATH en V6)
             if k == 'pos' and op in (0x36,):
                 return a
             fn, fty = self.tc.field_at(ty, 0)
@@ -805,6 +807,9 @@ class Decompiler:
             return
         if op == 0x36:                             # déréf position
             a = pop(); push(E(txt(a), PREC_ATOM, 'pos', getattr(a, 'ty', None))); return
+        if op == 0x1e:                             # affectation d'un tableau renvoyé par une fonction
+            a = pop(); v = pop()                   # (valeur, adresse) -> 1E <nb dimensions> (vérifié : t_arrfunc, t_arrfunc3)
+            emit('%s = %s' % (txt(a), txt(v)), x.off); return
         if op in (0x35, 0xb2, 0xb4, 0x61, 0x5d):   # stockage via adresse
             a = self.field0(pop(), op); v = pop()
             k = a.kind if isinstance(a, E) else None
@@ -1291,6 +1296,12 @@ class Decompiler:
             add('%NOLOCKGROUP')
         elif lg != 0xff:
             add('%%LOCKGROUP = %s' % ','.join(str(g + 1) for g in range(8) if lg & (1 << g)))
+        # %UNINITVARS : le traducteur marque chaque variable du programme avec l'indicateur 0xFA
+        own = [v for v in pc.vars if v[0] == 0 and not v[1].startswith('$')]
+        if any(v[2] == 0xfa for v in own):
+            add('%UNINITVARS')
+            if any(v[2] == 0x00 for v in own):
+                add('-- attention : variables avec et sans indicateur UNINITVARS (0xFA) mélangées')
         unk = [(i, a[i]) for i in (0, 1, 6, 16, 18, 19) if a[i]]
         if unk:
             add('-- attributs inconnus : %s' % unk)
@@ -1327,7 +1338,8 @@ class Decompiler:
                 if attr:
                     frm = ' FROM %s' % (pc.modules[attr - 1] if attr - 1 < len(pc.modules) else '?')
                 tn = tc.name(ty)
-                add('\t%s%s%s : %s' % (nm, where, frm, tn))
+                note = '' if fl in (0x00, 0x02, 0xfa, 0xfd) else '  -- indicateur de stockage inconnu 0x%02x' % fl
+                add('\t%s%s%s : %s%s' % (nm, where, frm, tn, note))
         # déclarations de routines externes / avant (ordre de la table)
         order = sorted(self.routines, key=lambda r: r.i0)
         pos = {r.k: r.i0 for r in order}

@@ -11,7 +11,10 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'pc2kl'))
 from pcfile import PC
 sys.setrecursionlimit(100000)
-threading.stack_size(512 * 1024 * 1024)
+try:
+    threading.stack_size(512 * 1024 * 1024)
+except ValueError:                      # refusé par certains Python Windows
+    threading.stack_size(64 * 1024 * 1024)
 
 def line_starts(src):
     b = src.encode('latin-1'); st = {}; off = 0

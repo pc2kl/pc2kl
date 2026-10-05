@@ -39,7 +39,7 @@ def read_type(r, withdims=True):
     if withdims:
         for _ in range(nd): dims.append(r.u16())
     if t==0x001f:          # PATH : en-tête standard, PATHHEADER (0 si absent), NODEDATA
-        dims=[norm_type(r.u16()),r.u16(),norm_type(r.u16())]
+        dims=[norm_type(r.u16()),norm_type(r.u16()),norm_type(r.u16())]   # norm_type(0) = 0 (pas de PATHHEADER)
     return (t,dims)
 
 def parse_types(raws):

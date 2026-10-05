@@ -1,0 +1,70 @@
+PROGRAM TARRFUNC
+%NOLOCKGROUP
+VAR
+ gb: ARRAY[6] OF BOOLEAN
+ gs: ARRAY[6] OF STRING[10]
+ gi: ARRAY[4] OF INTEGER
+ gr: ARRAY[3] OF REAL
+ gp: ARRAY[2] OF XYZWPR
+ n: INTEGER
+ROUTINE extbool(a: BOOLEAN; b: BOOLEAN; c: BOOLEAN): ARRAY OF BOOLEAN FROM tarrlib
+ROUTINE fbool(a: BOOLEAN; b: BOOLEAN): ARRAY OF BOOLEAN
+VAR
+ t: ARRAY[6] OF BOOLEAN
+ k: INTEGER
+BEGIN
+ FOR k = 1 TO 6 DO
+   t[k] = a
+ ENDFOR
+ t[2] = b
+ RETURN(t)
+END fbool
+ROUTINE fstr(p: XYZWPR): ARRAY OF STRING
+VAR
+ t: ARRAY[6] OF STRING[10]
+BEGIN
+ CNV_REAL_STR(p.x, 0, 0, t[1])
+ CNV_REAL_STR(p.y, 0, 0, t[2])
+ RETURN(t)
+END fstr
+ROUTINE fint(a: INTEGER): ARRAY OF INTEGER
+VAR
+ t: ARRAY[4] OF INTEGER
+BEGIN
+ t[1] = a
+ t[4] = a * 2
+ RETURN(t)
+END fint
+ROUTINE freal(a: REAL): ARRAY OF REAL
+VAR
+ t: ARRAY[3] OF REAL
+BEGIN
+ t[1] = a
+ RETURN(t)
+END freal
+ROUTINE fpos(a: REAL): ARRAY OF XYZWPR
+VAR
+ t: ARRAY[2] OF XYZWPR
+BEGIN
+ t[1].x = a
+ RETURN(t)
+END fpos
+ROUTINE uselocal(p: XYZWPR)
+VAR
+ lb: ARRAY[6] OF BOOLEAN
+ ls: ARRAY[6] OF STRING[10]
+BEGIN
+ lb = fbool(FALSE, TRUE)
+ ls = fstr(p)
+ gs[1] = ls[2]
+ gb[1] = lb[2]
+END uselocal
+BEGIN
+ gb = fbool(TRUE, FALSE)
+ gb = extbool(TRUE, TRUE, FALSE)
+ gs = fstr(gp[1])
+ gi = fint(n)
+ gr = freal(1.5)
+ gp = fpos(2.5)
+ uselocal(gp[2])
+END TARRFUNC
