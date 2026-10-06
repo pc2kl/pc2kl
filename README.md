@@ -13,10 +13,36 @@ can be read, fixed, and recompiled for a newer robot controller.
 ## Usage
 
 ```
-python pc2kl/pc2kl.py program.pc -o program.kl
-python pc2kl/pc2kl.py program.pc --asm        # annotated p-code listing
-python pc2kl/pc2kl.py program.pc --no-lines   # do not realign source line numbers
+python pc2kl/pc2kl.py [-h] [-o OUT] [--asm] [--no-lines] pc [pc ...]
 ```
+
+| Argument | Effect |
+|---|---|
+| `pc` (one or more) | `.pc` file(s) to decompile, or folder(s): every `.pc` in a folder is processed, in alphabetical order |
+| `-o OUT`, `--out OUT` | with a single `.pc`: output `.kl` file. With several `.pc` files, or if `OUT` is a folder: one `OUT/name.kl` per `name.pc` (the folder is created if needed). Without `-o`, the source is written to standard output |
+| `--asm` | print the annotated p-code listing (offset and bytes of each instruction); unknown opcodes are flagged `<-- ?? opcode XX inconnu` |
+| `--no-lines` | do not realign source line numbers (compact output, without the blank lines that restore the original numbering) |
+| `-h`, `--help` | show the help |
+
+Examples:
+
+```
+python pc2kl/pc2kl.py program.pc                   # source to standard output
+python pc2kl/pc2kl.py program.pc -o program.kl     # write program.kl
+python pc2kl/pc2kl.py program.pc --asm             # listing, then source, to standard output
+python pc2kl/pc2kl.py program.pc --asm -o prog.kl  # listing to standard output, source to prog.kl
+python pc2kl/pc2kl.py my_folder -o out/            # every .pc of a folder -> out/*.kl
+python pc2kl/pc2kl.py a.pc b.pc -o out/            # several files
+python pc2kl/pc2kl.py program.pc --no-lines -o program.kl
+```
+
+* For each file written, `program.pc -> program.kl` is printed, with the number of points
+  to check (`-- ??` marks) if any.
+* Errors and warnings (e.g. unknown opcode, incomplete output) go to standard error; a
+  failing file does not stop the processing of the others.
+* `.kl` files are written in Latin-1.
+* The translator version does not need to be given: the format is detected from the
+  `.pc` (V6.40 to V10.13).
 
 Python 3.8+ is required, with no third-party packages. No FANUC software is needed to
 run the tool; a licensed KAREL translator is only needed to recompile the recovered
@@ -51,7 +77,12 @@ are restored as `IN CMOS` / `IN SHADOW` on each variable, which recompiles to th
   compiled with 20 translator versions, V6.40 to V10.13 (5,904 `.pc` files). See
   [docs/VALIDATION.md](docs/VALIDATION.md) for what is compared and the current results.
 * Constructs absent from the test corpus may not be recognised yet; unknown opcodes are
-  reported explicitly rather than guessed.
+  reported explicitly rather than guessed. Decoding resumes at the next certain instruction
+  boundary (label, routine entry, or a consistent line marker): the skipped bytes and the
+  pending operands are written as a highlighted `-- ??` comment block, statements left
+  with a missing operand (`?`) are tagged, and a warning is placed at the top of the file.
+  If a routine's structure still cannot be rebuilt, its disassembly is written as comments
+  so that the rest of the file is kept.
 * Programs using vision, force, or other option packages may produce partial output.
 * Always review and test recovered code on a simulator before running it on a robot.
   Robots are dangerous machines; you are solely responsible for what you run on them.

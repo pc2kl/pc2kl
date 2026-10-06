@@ -10,7 +10,7 @@ Les noms des variables locales et des paramètres ne sont pas stockés dans le .
 ils sont régénérés (p1, p2..., l_3...). Les CONST sont remplacées par leur valeur,
 les commentaires sont perdus.
 """
-import sys, os, struct, json, argparse
+import sys, os, re, struct, json, argparse
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -26,6 +26,9 @@ PORT_KIND = {n: ('int' if n in _T['int_ports'] else 'bool') for n in PORTS.value
 PREDEF_FILES = {int(k): v for k, v in _T['predef_files'].items()}
 WITH_IDS = {int(k): tuple(v) for k, v in _T['with_ids'].items()}   # clauses WITH d'un MOVE
 ENUMS = {k: {int(a): b for a, b in v.items()} for k, v in _T['enums'].items()}   # MOTYPE_E, TERMTYPE_E...
+# Champs d'un CONFIG, stocké en un mot de 32 bits : (bit de départ, largeur) -> nom (opcodes A4/A5).
+CFG_FIELDS = {(0, 8): 'cfg_turn_no1', (8, 8): 'cfg_turn_no2', (16, 8): 'cfg_turn_no3',
+              (24, 1): 'cfg_flip', (25, 1): 'cfg_left', (26, 1): 'cfg_up', (27, 1): 'cfg_front'}
 
 # ---------------------------------------------------------------- désassemblage
 
@@ -42,6 +45,8 @@ class Ins:
     def s32(self, i=1): return struct.unpack_from('>i', self.b, i)[0]
 
     def __repr__(self):
+        if self.op == -1:
+            return '%04x: %s   <-- ?? opcode %02X inconnu (octets non décodés)' % (self.off, self.b.hex(' '), self.b[0])
         return '%04x: %s' % (self.off, self.b.hex(' '))
 
 
@@ -63,21 +68,78 @@ def oplen(code, i):
     return OPLEN.get(op, 0)
 
 
-def disasm(pcode, base=2):
+def _marker_ok(code, p, prev):
+    """3E llll oooo plausible à la position p, après le marqueur précédent prev=(ligne, offset)."""
+    if p + 5 > len(code) or code[p] != 0x3e:
+        return None
+    ln, so = struct.unpack_from('>HH', code, p + 1)
+    if prev is not None:
+        pl, po = prev
+        dso = (so - po) % 0x10000
+        if not (pl <= ln <= pl + 400) or not (dso < 20000) or (dso == 0 and ln != pl):
+            return None                        # (un même marqueur peut être répété : IF, WHILE...)
+    return ln, so
+
+
+def _resync(code, i, base, bounds, prev):
+    """Opcode inconnu à i : longueur inconnue. Cherche la prochaine frontière d'instruction sûre :
+    une étiquette ou une entrée de routine (certaines), sinon un marqueur de ligne 3E plausible
+    à partir duquel le décodage reprend proprement. Renvoie la position de reprise."""
+    nb = min([b + base for b in bounds if b + base > i] or [len(code)])
+    for p in range(i + 1, nb):
+        m = _marker_ok(code, p, prev)
+        if m is None:
+            continue
+        # vérification : décoder la suite jusqu'au marqueur suivant, une frontière ou un autre inconnu
+        j = p + 5; ok = True; last = m
+        for _ in range(200):
+            if j >= nb:
+                ok = (j == nb); break
+            if code[j] == 0x3e:
+                ok = _marker_ok(code, j, last) is not None; break
+            n = oplen(code, j)
+            if n == 0:
+                break                              # autre opcode inconnu : on s'arrête là
+            j += n
+        if ok:
+            return p
+    return nb
+
+
+def disasm(pcode, base=2, bounds=None, nlabels=0):
+    """bounds : offsets certains de début d'instruction (étiquettes, routines). S'il est fourni,
+    un opcode inconnu ne termine plus le désassemblage : ses octets sont regroupés dans une
+    pseudo-instruction (op = -1) jusqu'à la prochaine frontière retrouvée."""
     out = []
     i = base
+    prev = None
     while i < len(pcode):
         n = oplen(pcode, i)
         if n == 0:                         # opcode jamais observé
-            out.append(Ins(i - base, pcode[i], pcode[i:i + 1]))
+            if bounds is None:
+                out.append(Ins(i - base, pcode[i], pcode[i:i + 1]))
+                out[-1].op = -1
+                break
+            j = _resync(pcode, i, base, bounds, prev)
+            # un saut (79/7A étiquette) en fin de zone est conservé : il porte la structure IF/WHILE
+            k = j
+            if j - i >= 6 and pcode[j - 5] in (0x79, 0x7a) and pcode[j - 4:j - 2] == b'\x00\x00' \
+                    and struct.unpack_from('>I', pcode, j - 4)[0] < nlabels:
+                k = j - 5
+            out.append(Ins(i - base, pcode[i], pcode[i:k]))
             out[-1].op = -1
-            break
+            if k < j:
+                out.append(Ins(k - base, pcode[k], pcode[k:j]))
+            i = j
+            continue
         b = pcode[i:i + n]
         if len(b) < n:
             pad = bytes(n - len(b))
             if pcode[i] == 0x7f and len(b) == 3 and b[2] == 0xff:
                 pad = b'\xfd'                  # fin de fonction tronquée
             b = b + pad
+        if pcode[i] == 0x3e and len(b) == 5:
+            prev = struct.unpack_from('>HH', b, 1)
         out.append(Ins(i - base, pcode[i], b))
         i += n
     for k, x in enumerate(out):
@@ -102,8 +164,11 @@ def fmt_real(v):
     b = struct.pack('>f', v)
     for p in range(1, 10):
         s = '%.*g' % (p, v)
-        if struct.pack('>f', float(s)) == b:
-            break
+        try:
+            if struct.pack('>f', float(s)) == b:
+                break
+        except OverflowError:              # arrondi au-delà de FLT_MAX (ex. 3.403E38)
+            continue
     if 'e' in s or 'E' in s:
         m, e = s.lower().split('e')
         if '.' not in m:
@@ -210,8 +275,18 @@ def unify(a, b):
 
 # ---------------------------------------------------------------- décompilateur
 
+_HOLE = re.compile(r"'(?:[^']|'')*'|(?<![\w])\?(?![\w])")
+
+
+def _has_hole(text):
+    """Vrai si l'instruction contient l'opérande manquant '?' (hors chaînes)."""
+    return any(m.group(0) == '?' for m in _HOLE.finditer(text))
+
+
 class Stmt:
     def __init__(self, line, text, off=None, kids=None):
+        if text and not text.lstrip().startswith('--') and _has_hole(text):
+            text += '  -- ?? INSTRUCTION INCOMPLÈTE : opérande manquant (voir opcode inconnu au-dessus)'
         self.line = line; self.text = text; self.off = off; self.kids = kids
 
 
@@ -224,7 +299,9 @@ class Decompiler:
         self.pc = pc
         self.fname = fname
         self.tc = TypeCtx(pc.tdefs, pc.fmt)
-        self.ins = disasm(pc.pcode, pc.pfx)
+        bounds = set(pc.labels) | {r['off'] for r in pc.routines if r['mod'] == 0 and r['off'] != 0xffff}
+        self.ins = disasm(pc.pcode, pc.pfx, bounds, len(pc.labels))
+        self.unknown = [x for x in self.ins if x.op == -1]
         self.byoff = {x.off: x.idx for x in self.ins}
         self.labels = pc.labels
         self.warn = []
@@ -284,9 +361,37 @@ class Decompiler:
                         kk = [z for z in ('real', 'bool', 'int', 'str') if z in ks]
                         if kk and kk[0] != 'str':
                             r.locals[idx][1] = ({'int': 0x10, 'real': 0x11, 'bool': 0x12}[kk[0]], [])
-                r.body = self.block(r.bstart, r.i1)
+                if not self.unknown:
+                    r.body = self.block(r.bstart, r.i1)
+                else:                              # opcode inconnu : ne jamais perdre tout le fichier
+                    nw = len(self.warn)
+                    try:
+                        r.body = self.block(r.bstart, r.i1)
+                    except Exception as e:
+                        del self.warn[nw:]
+                        r.body = self.raw_body(r, e)
                 self.routines.append(r)
         return self
+
+    def raw_body(self, r, err):
+        """Corps d'une routine que la reconstruction n'a pas pu traiter (structure cassée par un
+        opcode inconnu) : le désassemblage est rendu en commentaires."""
+        ln = self.line_before(r.bstart + 1) or 0
+        bar = '-- ' + '#' * 70
+        unk = [x for x in self.ins[r.i0:r.i1] if x.op == -1]
+        out = [Stmt(ln, bar),
+               Stmt(ln, '-- ?? ROUTINE NON DÉCOMPILÉE : la structure n\'a pas pu être reconstruite (%s)'
+                    % ', '.join('opcode %02X inconnu @%04x' % (x.b[0], x.off) for x in unk[:5]) if unk
+                    else '-- ?? ROUTINE NON DÉCOMPILÉE (%s)' % type(err).__name__),
+               Stmt(ln, '-- ??   désassemblage (offset: octets) :')]
+        cur = ln
+        for x in self.ins[r.i0:r.i1]:
+            if x.op == 0x3e:
+                cur = x.u16()
+            out.append(Stmt(cur, '-- ' + repr(x)))
+        out.append(Stmt(cur, bar))
+        self.warn.append('routine %s non décompilée (%r)' % (r.name, err))
+        return out
 
     def setup_routine(self, r):
         info = r.info
@@ -460,6 +565,23 @@ class Decompiler:
                 if n not in self.emitted_labels:
                     self.emitted_labels.add(n)
                     emit('%s::' % self.lab(n), ln=self.line_before(i))
+            if op == -1:                         # opcode inconnu : octets non décodés, on reprend après
+                op0 = x.b[0]
+                hx = x.b.hex(' ')
+                if len(hx) > 60:
+                    hx = hx[:60] + ' ...'
+                pile = ', '.join(txt(e) for e in st if not isinstance(e, Marker))
+                bar = '-- ' + '#' * 70
+                emit(bar)
+                emit('-- ?? OPCODE %02X INCONNU @%04x : %d octet(s) non décodé(s) : %s' % (op0, x.off, len(x.b), hx))
+                if pile:
+                    emit('-- ??   pile avant l\'instruction : %s' % pile)
+                emit('-- ??   instruction(s) de cette ligne source manquante(s) ou incomplète(s)')
+                emit(bar)
+                self.warn.append('opcode %02X inconnu @%04x (ligne %d) : %d octet(s) ignoré(s)' % (op0, x.off, line[0], len(x.b)))
+                st = []
+                i += 1
+                continue
             if op == 0x3e:
                 line[0] = x.u16()
                 if st:
@@ -801,6 +923,15 @@ class Decompiler:
                 fn = 'FIELD_%X' % off
             s = '%s.%s' % (txt(base), fn)
             push(E(s, PREC_ATOM, tc.kind(fty) if fty else None, fty, True)); return
+        if op in (0xa4, 0xa5):                     # champ d'un CONFIG (bits) : A4/A5 bb ww
+            a = pop()                              # (bit de départ, largeur) ; A4 lecture, A5 écriture
+            fn = CFG_FIELDS.get((x.u8(1), x.u8(2)), 'CFG_BITS_%d_%d' % (x.u8(1), x.u8(2)))
+            k = 'int' if x.u8(2) > 1 else 'bool'
+            s = '%s.%s' % (txt(a), fn)
+            if op == 0xa4:
+                push(E(s, PREC_ATOM, k)); return
+            v = pop()
+            emit('%s = %s' % (s, txt(v, k)), x.off); return
         if op in (0x34, 0xb1, 0xb3, 0x5e):         # déréf
             a = self.field0(pop(), op)
             push(E(txt(a), PREC_ATOM, a.kind if isinstance(a, E) else None, a.ty if isinstance(a, E) else None))
@@ -1466,6 +1597,13 @@ def decompile_file(path, keep_lines=True, asm=False):
     pc = PC(load(path))
     d = Decompiler(pc, path).run()
     src = d.emit_source(keep_lines)
+    if d.unknown:
+        ops = ', '.join(sorted({'%02X' % x.b[0] for x in d.unknown}))
+        bar = '-- ' + '#' * 70 + '\n'
+        src = (bar +
+               '-- ?? ATTENTION : %d instruction(s) non décodée(s) (opcode(s) inconnu(s) : %s).\n' % (len(d.unknown), ops) +
+               '-- ??   Le programme est INCOMPLET : chercher "-- ??" et compléter à la main.\n' +
+               bar + src)
     warn = list(dict.fromkeys(d.warn))            # un bloc peut être analysé deux fois
     if warn:
         src += '\n-- Avertissements du décompilateur :\n' + '\n'.join('--   ' + w for w in warn[:50]) + '\n'
@@ -1514,6 +1652,9 @@ def main():
             open(o, 'w', encoding='latin-1').write(src)
             n = src.count('-- ??')
             print('%s -> %s%s' % (p, o, ('   (%d point(s) à vérifier : chercher "-- ??")' % n) if n else ''))
+            if d.unknown:
+                print('  ATTENTION : %d instruction(s) non décodée(s), opcode(s) inconnu(s) %s : sortie INCOMPLÈTE'
+                      % (len(d.unknown), ', '.join(sorted({'%02X' % x.b[0] for x in d.unknown}))), file=sys.stderr)
         else:
             sys.stdout.write(src)
 

@@ -46,6 +46,11 @@ BEGIN
  r = x.r
  c = x.config_data
  r = xe.x
+ r = xe.y
+ r = xe.z
+ r = xe.w
+ r = xe.p
+ r = xe.r
  r = xe.ext1
  r = xe.ext2
  r = xe.ext3

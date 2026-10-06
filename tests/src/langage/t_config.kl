@@ -1,0 +1,49 @@
+PROGRAM TCONFIG
+-- Champs d'un CONFIG (opcodes A4 lecture / A5 ecriture : A4 bb ww, bit de depart, largeur).
+-- Attendu : turn_no1 00 08, turn_no2 08 08, turn_no3 10 08, flip 18 01, left 19 01, up 1A 01, front 1B 01.
+%NOLOCKGROUP
+TYPE
+ s_t = STRUCTURE
+  a: INTEGER
+  cf: CONFIG
+ ENDSTRUCTURE
+VAR
+ s: s_t
+ i: INTEGER
+ b: BOOLEAN
+ r: REAL
+ c: CONFIG
+ x: XYZWPR
+ xe: XYZWPREXT
+ p: POSITION
+BEGIN
+ i = c.cfg_turn_no1
+ i = c.cfg_turn_no2
+ i = c.cfg_turn_no3
+ b = c.cfg_flip
+ b = c.cfg_left
+ b = c.cfg_up
+ b = c.cfg_front
+ c.cfg_turn_no1 = i
+ c.cfg_turn_no2 = i
+ c.cfg_turn_no3 = i
+ c.cfg_flip = b
+ c.cfg_left = b
+ c.cfg_up = b
+ c.cfg_front = b
+ i = x.config_data.cfg_turn_no1
+ b = x.config_data.cfg_flip
+ x.config_data.cfg_turn_no3 = -1
+ x.config_data.cfg_front = TRUE
+ i = xe.config_data.cfg_turn_no2
+ xe.config_data.cfg_up = FALSE
+ i = p.config_data.cfg_turn_no3
+ p.config_data.cfg_left = NOT p.config_data.cfg_left
+ i = s.cf.cfg_turn_no1
+ s.cf.cfg_flip = TRUE
+ IF x.config_data.cfg_flip THEN
+  i = 1
+ ENDIF
+ r = 3.4028235E38
+ r = -3.4028235E38
+END TCONFIG

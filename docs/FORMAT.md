@@ -316,6 +316,8 @@ exactly, with every routine offset, label and line marker on an instruction boun
 | `A1` | 6 | `FOR ... DOWNTO` on a parameter |
 | `A2` | 6 | write string parameter |
 | `A3` | 1 | `CANCEL FILE` |
+| `A4` | 3 | read a `CONFIG` field: `A4 bb ww` (see [CONFIG fields](#config-fields)) |
+| `A5` | 3 | write a `CONFIG` field: `A5 bb ww` |
 | `AA` | 3 | call routine: `AA nnnn` |
 | `AB` | 3 | routine as condition action: `AB nnnn` |
 | `AC` | 1 | `p1 >=< p2` |
@@ -339,6 +341,28 @@ A function may return an array: the return type is declared `ARRAY OF t` or
 table stores the type code without dimensions. The result is assigned with
 `value, 22 <destination address>, 1E nn`, where `nn` is the number of dimensions
 (`tests/src/langage/t_arrfunc.kl`, `t_arrfunc3.kl`).
+
+### CONFIG fields
+
+A `CONFIG` is a 32-bit word; its fields are bit fields. The address of the `CONFIG`
+(a variable, or `pos.config_data` = `32 0020` for an `XYZWPR`/`XYZWPREXT`, `32 0038`
+for a `POSITION`) is followed by `A4 bb ww` to read the field or, after the value,
+`A5 bb ww` to write it (`bb` = first bit, `ww` = width):
+
+| `bb ww` | Field | Type |
+|---|---|---|
+| `00 08` | `CFG_TURN_NO1` | INTEGER |
+| `08 08` | `CFG_TURN_NO2` | INTEGER |
+| `10 08` | `CFG_TURN_NO3` | INTEGER |
+| `18 01` | `CFG_FLIP` | BOOLEAN |
+| `19 01` | `CFG_LEFT` | BOOLEAN |
+| `1A 01` | `CFG_UP` | BOOLEAN |
+| `1B 01` | `CFG_FRONT` | BOOLEAN |
+
+Not in the original corpus: first seen in `.pc` files sent by a user (format 0x29), where
+the bit/field pairing is unambiguous (`F`/`N` tied to bit 24, `U`/`D` to 26, `T`/`B` to 27,
+`L`/`R` to 25, and debug strings naming each field). To be confirmed with
+`tests/src/langage/t_config.kl`.
 
 ### First field of a PATH in format 0x22
 
