@@ -1277,6 +1277,7 @@ class Decompiler:
         a = pc.attr
         if pc.comment:
             add("%%COMMENT = '%s'" % pc.comment)
+        if a[0]: add('%POWERFAIL')
         if a[1]: add('%INVISIBLE')
         if a[2]: add('%SYSTEM')
         if a[3]: add('%NOBUSYLAMP')
@@ -1292,6 +1293,7 @@ class Decompiler:
         ts = (a[13] << 8) | a[14]
         if ts != 0xffff: add('%%TIMESLICE = %d' % ts)
         if a[15]: add('%ALPHABETIZE')
+        if a[18]: add('%FLASHROM')
         lg = a[17]
         if lg == 0:
             add('%NOLOCKGROUP')
@@ -1303,7 +1305,14 @@ class Decompiler:
             add('%UNINITVARS')
             if any(v[2] == 0x00 for v in own):
                 add('-- attention : variables avec et sans indicateur UNINITVARS (0xFA) mélangées')
-        unk = [(i, a[i]) for i in (0, 6, 16, 18, 19) if a[i]]
+        # %NOSCANSVARS (V7.50+) et %FASTCMOSVAR (V7.20-V7.40) : indicateur porté par chaque
+        # variable sans IN CMOS / IN SHADOW explicite ; 0x03 et 0xFC respectivement
+        for fl_, dname in ((0x03, '%NOSCANSVARS'), (0xfc, '%FASTCMOSVAR')):
+            if any(v[2] == fl_ for v in own):
+                add(dname)
+                if any(v[2] == 0x00 for v in own):
+                    add('-- attention : variables avec et sans indicateur %s (0x%02X) mélangées' % (dname[1:], fl_))
+        unk = [(i, a[i]) for i in (6, 16, 19) if a[i]]
         if unk:
             add('-- attributs inconnus : %s' % unk)
         if NEGCONST:
@@ -1339,7 +1348,7 @@ class Decompiler:
                 if attr:
                     frm = ' FROM %s' % (pc.modules[attr - 1] if attr - 1 < len(pc.modules) else '?')
                 tn = tc.name(ty)
-                note = '' if fl in (0x00, 0x02, 0xfa, 0xfd) else '  -- indicateur de stockage inconnu 0x%02x' % fl
+                note = '' if fl in (0x00, 0x02, 0x03, 0xfa, 0xfc, 0xfd) else '  -- indicateur de stockage inconnu 0x%02x' % fl
                 add('\t%s%s%s : %s%s' % (nm, where, frm, tn, note))
         # déclarations de routines externes / avant (ordre de la table)
         order = sorted(self.routines, key=lambda r: r.i0)

@@ -1,0 +1,18 @@
+PROGRAM D_FLASHROM
+%NOLOCKGROUP
+%FLASHROM
+VAR
+	I : INTEGER
+	R : REAL
+	S : STRING[8]
+	P : XYZWPR
+	C IN CMOS : INTEGER
+	H IN SHADOW : REAL
+BEGIN
+	I = 1
+	R = 2.5
+	S = 'abc'
+	C = I + 1
+	H = R * 2
+	WRITE('I = ', I, ' S = ', S, CR)
+END D_FLASHROM
