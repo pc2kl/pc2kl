@@ -110,7 +110,7 @@ log(len(files), 'fichiers prédéfinis :', ', '.join('%d=%s' % kv for kv in sort
 intr = {}
 for ver, d, name, src, pc in corpus:
     if d != 'builtins': continue
-    nm = name.upper()
+    nm = name.upper().split('__')[0]       # NOM__n : variante à n arguments (paramètres optionnels omis)
     I = ins(pc)
     pos76 = [k for k, (_, op, b) in enumerate(I) if op == 0x76]
     if len(pos76) != 1: continue

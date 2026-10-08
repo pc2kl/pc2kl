@@ -7,14 +7,15 @@ POSL = {h: {int(k): v for k, v in d.items()} for h, d in _T['pos'].items()}
 
 SIMPLE = {
     0x10: 'INTEGER', 0x11: 'REAL', 0x12: 'BOOLEAN', 0x13: 'VECTOR',
-    0x14: 'VIS_PROCESS', 0x15: 'MODEL', 0x16: 'CAM_SETUP',
+    0x14: 'COMMON_ASSOC', 0x15: 'VIS_PROCESS', 0x16: 'MODEL', 0x20: 'CAM_SETUP',   # vérifié : f_assoc_t
     0x17: 'SHORT', 0x18: 'BYTE', 0x1c: 'CONFIG', 0x1d: 'FILE',
     0x1f: 'PATH', 0x00: '',
 }
 POSKIND = {0x01: 'POSITION', 0x02: 'XYZWPR', 0x06: 'XYZWPREXT'}
+GROUP_ASSOC = 0x1e          # GROUP_ASSOC [IN GROUP[n]] : codé comme un type position du groupe n
 
 # tailles en octets (mémoire KAREL) utilisées pour calculer les offsets de champs
-SIZE_SIMPLE = {0x10: 4, 0x11: 4, 0x12: 4, 0x13: 12, 0x17: 2, 0x18: 1, 0x1c: 4, 0x1d: 4}
+SIZE_SIMPLE = {0x10: 4, 0x11: 4, 0x12: 4, 0x13: 12, 0x14: 4, 0x17: 2, 0x18: 1, 0x1c: 4, 0x1d: 4}
 
 
 def jpos_axes(lo):
@@ -59,16 +60,32 @@ class TypeCtx:
                 parts.append('%s = %s' % (kw, self.types[lo]['name']))
         return 'PATH' + (' ' + ', '.join(parts) if parts else '')
 
-    def path_node(self, t):
-        """type d'un noeud de PATH (pth[i])"""
-        if isinstance(t, tuple) and t[0] == 0x001f and len(t[1]) == 3:
-            return (t[1][2], [])
+    def _path(self, t):
+        """type PATH (0x1f, [en-tête std, PATHHEADER, NODEDATA]), y compris via un type
+        utilisateur (MY_PATH = PATH NODEDATA = ...) ; None sinon"""
+        for _ in range(8):
+            if t is None:
+                return None
+            if isinstance(t, tuple) and t[0] == 0x001f:
+                return t if len(t[1]) == 3 else None
+            code = t if isinstance(t, int) else t[0]
+            if code >> 8 != 0x11 or (code & 0xff) >= len(self.types):
+                return None
+            t = self.types[code & 0xff].get('alias')
         return None
 
+    def is_path(self, t):
+        code = t if isinstance(t, int) else t[0]
+        return code == 0x001f or self._path(t) is not None
+
+    def path_node(self, t):
+        """type d'un noeud de PATH (pth[i])"""
+        t = self._path(t)
+        return (t[1][2], []) if t else None
+
     def path_header(self, t):
-        if isinstance(t, tuple) and t[0] == 0x001f and len(t[1]) == 3:
-            return (t[1][1] or t[1][0], [])
-        return None
+        t = self._path(t)
+        return (t[1][1] or t[1][0], []) if t else None
 
     def _base(self, hi, lo):
         if hi == 0:
@@ -83,6 +100,8 @@ class TypeCtx:
             grp = '' if hi == 1 else ' IN GROUP[%d]' % hi
             if lo in POSKIND:
                 return POSKIND[lo] + grp
+            if lo == GROUP_ASSOC:
+                return 'GROUP_ASSOC' + grp
             if lo & 0x0f == 9:
                 n = lo >> 4
                 return ('JOINTPOS%d' % n if n != 9 else 'JOINTPOS') + grp
@@ -98,7 +117,7 @@ class TypeCtx:
         hi &= 0x1f
         if hi == 0:
             return {0x10: 'int', 0x11: 'real', 0x12: 'bool', 0x17: 'int', 0x18: 'int',
-                    0x13: 'vec', 0x1d: 'file', 0x1c: 'config'}.get(lo, 'other')
+                    0x13: 'vec', 0x1d: 'file', 0x1c: 'config', 0x14: 'assoc'}.get(lo, 'other')
         if hi == 0x1f:
             return 'str'
         if hi == 0x11:
@@ -108,7 +127,7 @@ class TypeCtx:
                     return self.kind(t2['alias'])
             return 'struct'
         if 1 <= hi <= 8:
-            return 'pos'
+            return 'assoc' if lo == GROUP_ASSOC else 'pos'
         return 'other'
 
     def elem(self, t):

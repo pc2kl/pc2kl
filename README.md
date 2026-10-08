@@ -65,7 +65,9 @@ Some information is not stored in a `.pc` file at all:
 * comments and source formatting;
 * the names of local variables and routine parameters (regenerated as `p1`, `l_3`, ...);
 * `CONST` names (replaced by their value) and the names of `%INCLUDE` files;
-* the directives that leave no trace: `%INCLUDE`, `%ENVIRONMENT`, `%RWACCESS`.
+* the directives that leave no trace: `%INCLUDE`, `%RWACCESS`, `%CRTDEVICE`, `%DEFGROUP`,
+  `%DELAY`; for `%ENVIRONMENT`, only its use is detectable (the environments needed by the
+  built-ins called are written back, see [docs/FORMAT.md](docs/FORMAT.md#translator-directives)).
 
 Default storage directives (`%CMOSVARS`, `%SHADOWVARS`, `%SHCMOSVARS`, `%CMOS2SHADOW`)
 are restored as `IN CMOS` / `IN SHADOW` on each variable, which recompiles to the same
@@ -73,8 +75,8 @@ are restored as `IN CMOS` / `IN SHADOW` on each variable, which recompiles to th
 
 ## Validation and limitations
 
-* Validated by round trip (decompile, recompile, compare) on about 300 test programs
-  compiled with 20 translator versions, V6.40 to V10.13 (5,904 `.pc` files). See
+* Validated by round trip (decompile, recompile, compare) on about 325 test programs
+  compiled with 20 translator versions, V6.40 to V10.13 (6,387 `.pc` files). See
   [docs/VALIDATION.md](docs/VALIDATION.md) for what is compared and the current results.
 * Constructs absent from the test corpus may not be recognised yet; unknown opcodes are
   reported explicitly rather than guessed. Decoding resumes at the next certain instruction

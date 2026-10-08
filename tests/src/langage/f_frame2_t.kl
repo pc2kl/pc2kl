@@ -1,0 +1,9 @@
+PROGRAM F_FRAME2_T
+VAR
+  p1, p2, p3, p4, f : POSITION
+  x1, x2, x3 : XYZWPR
+BEGIN
+  f = FRAME(p1, p2, p3)
+  f = FRAME(p1, p2, p3, p4)
+  f = FRAME(x1, x2, x3)
+END F_FRAME2_T

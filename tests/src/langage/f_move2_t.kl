@@ -1,0 +1,16 @@
+PROGRAM F_MOVE2_T
+VAR
+path1   :PATH
+v1   :VECTOR
+i : INTEGER
+BEGIN
+    MOVE ALONG path1,
+        WHEN AT NODE[3] DO
+        CANCEL
+        WHEN AT NODE[i] DO
+        STOP
+    ENDMOVE
+    MOVE RELATIVE v1
+    MOVE RELATIVE v1 NOWAIT
+    MOVE ALONG path1[2..i]
+END F_MOVE2_T

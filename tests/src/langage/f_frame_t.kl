@@ -1,0 +1,9 @@
+PROGRAM F_FRAME_T
+VAR
+  p1, p2, p3, p4, f : POSITION
+  v : VECTOR
+BEGIN
+  f = FRAME(p1, p2, p3)
+  f = FRAME(p1, p2, p3, p4)
+  v = p1.location
+END F_FRAME_T

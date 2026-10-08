@@ -109,7 +109,7 @@ KAREL reference manual. Tests: `tests/src/langage/w_d_*.kl`, `inv_*.kl` and
 | `%CRTDEVICE` | no header trace | — | recompiles identically |
 | `%DEFGROUP` | no header trace | — | recompiles identically |
 | `%DELAY` | no header trace | — | recompiles identically |
-| `%ENVIRONMENT` | no trace | — | translation only |
+| `%ENVIRONMENT` | absence of `$GROUP` | `%ENVIRONMENT` per module used | see below |
 | `%FASTCMOSVAR` | flag `FC` (V7.20 – V7.40), `FD` later | directive / `IN CMOS` | not in the manual; rejected by V10.x |
 | `%FLASHROM` | byte 18 | directive | not in the manual |
 | `%INCLUDE` | no trace | included text | see [%INCLUDE and CONST](#include-and-const) |
@@ -135,10 +135,16 @@ KAREL reference manual. Tests: `tests/src/langage/w_d_*.kl`, `inv_*.kl` and
 ## Type codes
 
 Observed by declaring one variable of each type: `0x10` INTEGER, `0x11` REAL,
-`0x12` BOOLEAN, `0x13` VECTOR, `0x17` SHORT, `0x18` BYTE, `0x1C` CONFIG, `0x1D` FILE,
-`0x1F` PATH, `0x1Fnn` STRING[nn], `0x11nn` user type nn, `0xgg01` POSITION,
-`0xgg02` XYZWPR, `0xgg06` XYZWPREXT, `0xggN9` JOINTPOSN (gg = group). Bits `0x60` of
-the high byte give the number of array dimensions.
+`0x12` BOOLEAN, `0x13` VECTOR, `0x14` COMMON_ASSOC, `0x15` VIS_PROCESS, `0x16` MODEL,
+`0x17` SHORT, `0x18` BYTE, `0x1C` CONFIG, `0x1D` FILE, `0x1F` PATH, `0x20` CAM_SETUP,
+`0x1Fnn` STRING[nn], `0x11nn` user type nn, `0xgg01` POSITION, `0xgg02` XYZWPR,
+`0xgg06` XYZWPREXT, `0xggN9` JOINTPOSN, `0xgg1E` GROUP_ASSOC (gg = group). Bits `0x60`
+of the high byte give the number of array dimensions. (`0x14`–`0x16` and `0x20` were
+mislabelled before 8 October 2026; checked with `tests/src/langage/f_assoc_t.kl`, the
+vision types can only be declared, not used in a structure.)
+
+A routine parameter of type `PATH` (or of a user type defined as a `PATH`) takes two
+stack slots, address and type descriptor, like a position.
 
 A `PATH` (`0x001F`) is followed by three type codes: the standard header type, the
 `PATHHEADER` type (0 when absent) and the `NODEDATA` type.
@@ -172,7 +178,7 @@ exactly, with every routine offset, label and line marker on an instruction boun
 | `07` | 1 | `MOVE ... VIA` |
 | `08` | 1 | `MOVE ALONG` |
 | `09` | 1 | `NOWAIT` |
-| `0A` | 2 | `MOVE NEAR/AWAY/RELATIVE/ABOUT/AXIS`: `0A kk` |
+| `0A` | 2 | `0A kk`: `01` NEAR, `02` AWAY, `03` RELATIVE (VECTOR), `04` ABOUT, `05` AXIS, `06` RELATIVE (position) |
 | `0B` | 1 | end of motion statement |
 | `0C` | 1 | `MOVE TO pth[i]` (PATH node) |
 | `0D` | 1 | `ENABLE CONDITION` |
@@ -186,7 +192,7 @@ exactly, with every routine offset, label and line marker on an instruction boun
 | `17` | 6 | parameter: `17 ff xxxxxxxx` |
 | `18` | 1 | `CONDITION`: start |
 | `19` | 2 | `x = DIN[3]`: `19 pp` |
-| `1A` | 2 | `DOUT[1] = TRUE`: `1A pp` |
+| `1A` | 2 | `DOUT[1] = TRUE`: `1A pp`; port `05`: `OPEN`/`CLOSE`/`RELAX HAND n` (value 1/2/0) |
 | `1B` | 2 | `WAIT FOR DIN[1]`: `1B pp` |
 | `1C` | 6 | `MOVE TO p1`: `1C 01 xxxxxxxx` |
 | `1D` | 1 | `ARRAY_LEN` |
@@ -197,7 +203,7 @@ exactly, with every routine offset, label and line marker on an instruction boun
 | `22` | 6 | variable address |
 | `23` | 6 | write variable |
 | `24` | 3 | `BYNAME`: `24 tttt` |
-| `25` | 2 | `WITH $SCAN_TIME` |
+| `25` | 2 | `WITH` in a condition handler: `25 01` `$SCAN_TIME`, `25 02` `$PRIORITY` |
 | `26` | 2 | end of a call using `BYNAME`: `26 nn` |
 | `27` | 1 | call preparation |
 | `28` | 1 | `DISCONNECT TIMER` |
@@ -316,8 +322,8 @@ exactly, with every routine offset, label and line marker on an instruction boun
 | `A1` | 6 | `FOR ... DOWNTO` on a parameter |
 | `A2` | 6 | write string parameter |
 | `A3` | 1 | `CANCEL FILE` |
-| `A4` | 3 | read a `CONFIG` field: `A4 bb ww` (see [CONFIG fields](#config-fields)) |
-| `A5` | 3 | write a `CONFIG` field: `A5 bb ww` |
+| `A4` | 3 | read a bit field (`CONFIG`, `GROUP_ASSOC`, `COMMON_ASSOC`): `A4 bb ww` (see [CONFIG fields](#config-fields)) |
+| `A5` | 3 | write a bit field: `A5 bb ww` |
 | `AA` | 3 | call routine: `AA nnnn` |
 | `AB` | 3 | routine as condition action: `AB nnnn` |
 | `AC` | 1 | `p1 >=< p2` |
@@ -364,11 +370,68 @@ the bit/field pairing is unambiguous (`F`/`N` tied to bit 24, `U`/`D` to 26, `T`
 `L`/`R` to 25, and debug strings naming each field). To be confirmed with
 `tests/src/langage/t_config.kl`.
 
+`GROUP_ASSOC` and `COMMON_ASSOC` (the group and common data of a `PATH` node) are
+32-bit words with bit fields too (`tests/src/langage/f_assoc_t.kl`):
+
+| Type | `bb ww` | Field |
+|---|---|---|
+| `GROUP_ASSOC` | `00 10` | `SEGRELSPEED` |
+| `GROUP_ASSOC` | `10 04` | `SEGMOTYPE` |
+| `GROUP_ASSOC` | `14 03` | `SEGORIENTYPE` |
+| `GROUP_ASSOC` | `17 01` | `SEGBREAK` (BOOLEAN) |
+| `COMMON_ASSOC` | `00 03` | `SEGTERMTYPE` |
+| `COMMON_ASSOC` | `03 07` | `SEGDECELTOL` |
+| `COMMON_ASSOC` | `10 08` | `SEGRELACCEL` |
+| `COMMON_ASSOC` | `18 05` | `SEGTIMESHFT` |
+
+### Condition handlers
+
+Tests: `tests/src/langage/t_cond*.kl`, `f_cond*.kl`, `f_move*.kl`, `f_node_t.kl`.
+
+* `CONDITION[n]:` is `n, 81`; each `WHEN` starts with `18`, preceded by `B5` when its
+  conditions are joined by `OR`; the handler ends with `04`.
+* In a `MOVE ..., WHEN ... ENDMOVE` statement and in `WAIT FOR`, each `WHEN` starts with
+  `03` (also preceded by `B5` for `OR`); a single `04` ends all the clauses.
+* Conditions `12 cc`: `06`–`0B` variable *relop* variable (both pushed as addresses, read
+  at each scan); `1B`–`20` (INTEGER/BOOLEAN) and `21`–`26` (REAL) variable *relop* value:
+  the value is computed once, when the handler is defined, and is written `EVAL(...)`
+  unless it is a constant; `27`–`32` and `41`–`4C` port *relop* value (a value pushed as
+  an address is a variable read at each scan). `01`: PATH node, operands
+  `1, time, node`: time `0` is `AT NODE[n]`, a negated time `TIME t BEFORE NODE[n]`, a
+  positive one `TIME t AFTER NODE[n]`. Relational conditions are written between
+  parentheses, as the translator requires when they are joined by `AND`/`OR`.
+* Actions `13 aa` found since the first corpus: `06` `SIGNAL SEMAPHORE[n]`, `0A`
+  `NOMESSAGE`, `13` `CONTINUE`. `WITH $PRIORITY = n` before a routine action is `n, 25 02`.
+* Translators V6.x and V7.x truncate source lines after about 128 characters: long
+  `WHEN` clauses are written over several lines.
+
+### Optional parameters of built-ins
+
+Every built-in of `tests/src/builtins` was compiled again without its last argument(s)
+(`outils` probe, 8 October 2026). The translator accepts it for 18 of them; 17 compile to
+the same call with the default value pushed, so the decompiled call shows that value
+explicitly and recompiles identically. `FRAME(p1, p2, p3)` alone is a different built-in
+(`76 0A`, `tests/src/builtins/FRAME__3.kl`; `FRAME` with four arguments is `76 09`). A
+test named `NAME__n.kl` is a variant of `NAME` with `n` arguments for `derive_tables.py`.
+
+### %ENVIRONMENT
+
+Without `%ENVIRONMENT`, the translator loads its default environment, which declares
+the motion types (`UPR_T`, `MOTYPE_E`…) and `$GROUP`: every program of the corpus
+(7,675 files) contains `$GROUP`. With `%ENVIRONMENT`, only the listed files are loaded,
+and `$GROUP` is absent unless `sysdef` is one of them. Which files were listed is not
+stored. When `$GROUP` is missing, `pc2kl` writes one `%ENVIRONMENT` per module of the
+built-in routines called (module `PATHOP` → `pathop`, `QUEUEMGR` → `pbqmgr`, `TRNFIL` →
+`trans`…, checked with one test per module; `PBCORE` is available with any environment),
+or `%ENVIRONMENT uif` when none is called (`tests/src/langage/f_env_t.kl`).
+
 ### First field of a PATH in format 0x22
 
 Format 0x22 does not emit the field instruction `32 0000` for a field at offset 0:
 `pth[1].j1 = …` (first field of a node) and `pth.hs = …` (first field of the header)
 compile without it, so the decoder restores the first field from the declared type.
+The same applies to the first field of a structure inside a node (`pth[1].npos.x`, where
+`npos` is at offset 0) and to a header read as a position (`36`).
 
 ## Motion clauses and multi-group moves
 

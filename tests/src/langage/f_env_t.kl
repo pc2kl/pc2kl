@@ -1,0 +1,14 @@
+PROGRAM F_ENV_T
+%ENVIRONMENT TPE
+%ENVIRONMENT pathop
+%ENVIRONMENT regope
+VAR
+  i, st : INTEGER
+  r : REAL
+  p : PATH
+  b : BOOLEAN
+BEGIN
+  GET_REG(1, b, i, r, st)
+  APPEND_NODE(p, st)
+  i = PATH_LEN(p)
+END F_ENV_T

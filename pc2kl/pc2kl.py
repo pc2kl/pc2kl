@@ -11,6 +11,7 @@ ils sont régénérés (p1, p2..., l_3...). Les CONST sont remplacées par leur 
 les commentaires sont perdus.
 """
 import sys, os, re, struct, json, argparse
+from decimal import Decimal
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -27,8 +28,22 @@ PREDEF_FILES = {int(k): v for k, v in _T['predef_files'].items()}
 WITH_IDS = {int(k): tuple(v) for k, v in _T['with_ids'].items()}   # clauses WITH d'un MOVE
 ENUMS = {k: {int(a): b for a, b in v.items()} for k, v in _T['enums'].items()}   # MOTYPE_E, TERMTYPE_E...
 # Champs d'un CONFIG, stocké en un mot de 32 bits : (bit de départ, largeur) -> nom (opcodes A4/A5).
+# %ENVIRONMENT : sans directive, ktrans charge l'environnement par défaut, qui déclare toujours $GROUP
+# (présent dans les 7675 programmes du corpus). Son absence signale un %ENVIRONMENT sans sysdef.
+# Fichier .ev qui déclare chaque module de routines intégrées (vérifié : un test par module) ;
+# PBCORE est disponible avec n'importe quel environnement.
+ENV_OF_MODULE = {'BYNAM': 'bynam', 'ERRS': 'errs', 'FDEV': 'fdev', 'FLBT': 'flbt', 'IOSETUP': 'iosetup',
+                 'KCLOP': 'kclop', 'MEMO': 'memo', 'MIR': 'mir', 'MOTN': 'motn', 'MULTI': 'multi',
+                 'PATHOP': 'pathop', 'PC': 'pc', 'QUEUEMGR': 'pbqmgr', 'REGOPE': 'regope', 'STRNG': 'strng',
+                 'TIM': 'tim', 'TPE': 'tpe', 'TRNFIL': 'trans', 'UIF': 'uif', 'VECTR': 'vectr', 'XML': 'xml',
+                 'PBCORE': None}
+# OPEN/CLOSE/RELAX HAND n : écriture de la valeur sur le pseudo-port 05 (vérifié : f_hand_t, f_hand2_t)
+HAND_OPS = {1: 'OPEN', 2: 'CLOSE', 0: 'RELAX'}
 CFG_FIELDS = {(0, 8): 'cfg_turn_no1', (8, 8): 'cfg_turn_no2', (16, 8): 'cfg_turn_no3',
               (24, 1): 'cfg_flip', (25, 1): 'cfg_left', (26, 1): 'cfg_up', (27, 1): 'cfg_front'}
+# GROUP_ASSOC et COMMON_ASSOC (données de noeud de PATH) : mêmes champs de bits (vérifié : f_assoc_t)
+GASSOC_FIELDS = {(0, 16): 'segrelspeed', (16, 4): 'segmotype', (20, 3): 'segorientype', (23, 1): 'segbreak'}
+CASSOC_FIELDS = {(0, 3): 'segtermtype', (3, 7): 'segdeceltol', (16, 8): 'segrelaccel', (24, 5): 'segtimeshft'}
 
 # ---------------------------------------------------------------- désassemblage
 
@@ -169,6 +184,10 @@ def fmt_real(v):
                 break
         except OverflowError:              # arrondi au-delà de FLT_MAX (ex. 3.403E38)
             continue
+    if ('e' in s or 'E' in s) and 1e-6 <= abs(v) < 1e10:
+        d = format(Decimal(s), 'f')                # écriture décimale (1000000.0 et non 1.0E6)
+        if struct.pack('>f', float(d)) == b:
+            return d if '.' in d else d + '.0'
     if 'e' in s or 'E' in s:
         m, e = s.lower().split('e')
         if '.' not in m:
@@ -247,6 +266,29 @@ class FileN(E):
         E.__init__(self, text, PREC_ATOM, 'file')
         self.items = []
         self.mode = None
+
+
+def wrap_list(items, sep, head, indent='\t\t', width=100):
+    """head + items joints par sep, coupé en plusieurs lignes au-delà de width caractères
+    (ktrans V6/V7 tronque les lignes de plus de ~128 caractères ; vérifié : f_cond_t)"""
+    lines = [head]
+    for k, it in enumerate(items):
+        piece = it + (sep.rstrip() if k < len(items) - 1 else '')
+        if k and len(lines[-1]) + 1 + len(piece) > width:
+            lines.append(indent + piece)
+        elif k:
+            lines[-1] += ' ' + piece
+        else:
+            lines[-1] += piece
+    return '\n'.join(lines)
+
+
+def when_clause(cs, acts, orf):
+    s = wrap_list(cs, ' OR ' if orf else ' AND ', '\tWHEN ') + ' DO '
+    if not acts:
+        return s
+    last = s.split('\n')
+    return '\n'.join(last[:-1] + [wrap_list(acts, ', ', last[-1])])
 
 
 def txt(e, hint=None):
@@ -401,7 +443,7 @@ class Decompiler:
         slots = []
         for (t) in info['params']:
             k = self.tc.kind(t)
-            slots.append(2 if k in ('str', 'pos') else 1)
+            slots.append(2 if k in ('str', 'pos') or self.tc.is_path(t) else 1)   # PATH : adresse + descripteur
         total = sum(slots)
         pos = -total + 1
         r.pslot = {}
@@ -410,7 +452,7 @@ class Decompiler:
             nm = 'p%d' % (j + 1)
             r.params.append((nm, t))
             r.pslot[pos] = (nm, t)
-            if slots[j] == 2 and self.tc.kind(t) == 'pos':
+            if slots[j] == 2 and (self.tc.kind(t) == 'pos' or self.tc.is_path(t)):
                 r.descslots.add(pos + 1)
             pos += slots[j]
         r.locals = {}      # slot -> [nom, type, declared]
@@ -919,13 +961,25 @@ class Decompiler:
                 self.note_local_struct(base.lkey[1], 12, 0x13)   # local scalaire structuré = VECTOR
                 bty = (0x13, [])
             fn, fty = (tc.field_at(bty, off) if bty else (None, None))
+            for _ in range(4):                     # anciens compilateurs : 1er champ (offset 0) implicite
+                if fn is not None or not bty or tc.kind(bty) != 'struct':
+                    break
+                f0, f0t = tc.field_at(bty, 0)
+                if f0 is None or not f0t:
+                    break
+                base = E('%s.%s' % (txt(base), f0), PREC_ATOM, tc.kind(f0t), f0t, True); bty = f0t
+                fn, fty = tc.field_at(bty, off)
             if fn is None:
                 fn = 'FIELD_%X' % off
             s = '%s.%s' % (txt(base), fn)
             push(E(s, PREC_ATOM, tc.kind(fty) if fty else None, fty, True)); return
         if op in (0xa4, 0xa5):                     # champ d'un CONFIG (bits) : A4/A5 bb ww
             a = pop()                              # (bit de départ, largeur) ; A4 lecture, A5 écriture
-            fn = CFG_FIELDS.get((x.u8(1), x.u8(2)), 'CFG_BITS_%d_%d' % (x.u8(1), x.u8(2)))
+            aty = a.ty if isinstance(a, E) and a.ty else None
+            code = aty[0] if aty else None
+            tbl = (GASSOC_FIELDS if code is not None and 1 <= code >> 8 <= 8 and code & 0xff == 0x1e else
+                   CASSOC_FIELDS if code == 0x14 else CFG_FIELDS)
+            fn = tbl.get((x.u8(1), x.u8(2)), 'BITS_%d_%d' % (x.u8(1), x.u8(2)))
             k = 'int' if x.u8(2) > 1 else 'bool'
             s = '%s.%s' % (txt(a), fn)
             if op == 0xa4:
@@ -937,7 +991,7 @@ class Decompiler:
             push(E(txt(a), PREC_ATOM, a.kind if isinstance(a, E) else None, a.ty if isinstance(a, E) else None))
             return
         if op == 0x36:                             # déréf position
-            a = pop(); push(E(txt(a), PREC_ATOM, 'pos', getattr(a, 'ty', None))); return
+            a = self.field0(pop(), 0x5d); push(E(txt(a), PREC_ATOM, 'pos', getattr(a, 'ty', None))); return
         if op == 0x1e:                             # affectation d'un tableau renvoyé par une fonction
             a = pop(); v = pop()                   # (valeur, adresse) -> 1E <nb dimensions> (vérifié : t_arrfunc, t_arrfunc3)
             emit('%s = %s' % (txt(a), txt(v)), x.off); return
@@ -951,7 +1005,10 @@ class Decompiler:
             idx = pop(); pn = PORTS.get(x.u8(), 'PORT_%02X' % x.u8())
             push(E('%s[%s]' % (pn, txt(idx, 'int')), PREC_ATOM, PORT_KIND.get(pn))); return
         if op == 0x1a:
-            idx = pop(); v = pop(); pn = PORTS.get(x.u8(), 'PORT_%02X' % x.u8())
+            idx = pop(); v = pop()
+            if x.u8() == 0x05 and isinstance(v, Const) and v.raw in HAND_OPS:   # pseudo-port 05 : main
+                emit('%s HAND %s' % (HAND_OPS[v.raw], txt(idx, 'int')), x.off); return
+            pn = PORTS.get(x.u8(), 'PORT_%02X' % x.u8())
             emit('%s[%s] = %s' % (pn, txt(idx, 'int'), txt(v, PORT_KIND.get(pn))), x.off); return
         if op in (0x0f, 0x1f):                     # PULSE
             t = pop(); idx = pop(); pn = PORTS.get(x.u8(), 'PORT_%02X' % x.u8())
@@ -1039,7 +1096,7 @@ class Decompiler:
                 elif k == 2: m.parts.append('MOVE AWAY %s' % txt(args[0], 'real'))
                 elif k == 4: m.parts.append('MOVE ABOUT %s BY %s' % (A[0], txt(args[1], 'real')))
                 elif k == 5: m.parts.append('MOVE AXIS %s BY %s' % (txt(args[0], 'int'), txt(args[1], 'real')))
-                elif k == 6: m.parts.append('MOVE RELATIVE %s' % A[0])
+                elif k in (3, 6): m.parts.append('MOVE RELATIVE %s' % A[0])   # 3 VECTOR (f_move2_t), 6 position (t_motion)
                 else: m.parts.append('MOVE ?%d %s' % (k, ', '.join(A)))
             return
         if op == 0x82:
@@ -1065,7 +1122,7 @@ class Decompiler:
                 lines = [head + ',']
                 for c in conds:
                     for (cs, acts, orf) in c.clauses:
-                        lines.append('\tWHEN %s DO %s' % ((' OR ' if orf else ' AND ').join(cs), ', '.join(acts)))
+                        lines.append(when_clause(cs, acts, orf))
                 lines.append('ENDMOVE')
                 head = '\n'.join(lines)
             emit(head, x.off)
@@ -1094,7 +1151,8 @@ class Decompiler:
         if op in (0x51, 0x68):
             a = pop(); k = 'int' if op == 0x51 else 'real'
             if isinstance(a, Const): a.kind = k
-            push(E('-%s' % wrap(a, PREC_MUL, k), PREC_ADD, k)); return
+            n = E('-%s' % wrap(a, PREC_MUL, k), PREC_ADD, k); n.negof = a
+            push(n); return
         if op in (0x50, 0x67):
             a = pop(); k = 'int' if op == 0x50 else 'real'
             push(E('ABS(%s)' % txt(a, k), PREC_ATOM, k)); return
@@ -1234,7 +1292,7 @@ class Decompiler:
         if op == 0x2c:
             if x.u8() == 1 and x.s16(2) == -1 and st and isinstance(st[-1], FileN):
                 f = st.pop()
-                fname = '' if f.text == 'TPDISPLAY' and False else ' ' + f.text
+                fname = ' ' + ('INPUT' if f.mode == 'READ' and f.text == 'OUTPUT' else f.text)   # synonymes (fichier 6)
                 emit('%s%s(%s)' % (f.mode or 'WRITE', fname, ', '.join(f.items)), x.off)
                 return
             if x.u8() == 1 and x.s16(2) < 0:
@@ -1250,6 +1308,21 @@ class Decompiler:
         return False
 
     RELOPS = ['>', '>=', '=', '<>', '<=', '<']
+    COND_WITH = {1: '$SCAN_TIME', 2: '$PRIORITY'}       # 25 nn (vérifié : f_cond_t, f_cond2_t)
+
+    def cond_with(self, w):
+        n = int(w.kind[4:])
+        return '%s = %s' % (self.COND_WITH.get(n, '$WITH_%d' % n), w.text)
+
+    @staticmethod
+    def cond_value(b, k):
+        """membre droit d'une condition 'variable relop valeur' : évalué une seule fois, à la
+        définition de la condition ; hors constante il s'écrit EVAL(...) (vérifié : f_cond2_t)"""
+        if isinstance(b, Const) or isinstance(getattr(b, 'negof', None), Const):
+            return txt(b, k)
+        if isinstance(b, E) and b.addr:            # port relop variable (22) : lu à chaque scrutation
+            return txt(b, k)
+        return 'EVAL(%s)' % txt(b, k)
 
     def cond_ops(self, x, st, emit):
         op = x.op
@@ -1277,9 +1350,7 @@ class Decompiler:
             if st and st[-1].kind and str(st[-1].kind).startswith('with'):
                 w = st.pop()
             n = pop()
-            wt = None
-            if w is not None:
-                wt = '%s = %s' % ({1: '$SCAN_TIME'}.get(int(w.kind[4:]), '$WITH_%s' % w.kind[4:]), w.text)
+            wt = self.cond_with(w) if w is not None else None
             st.append(CondN('COND', txt(n, 'int'), wt)); return True
         if op == 0x18:
             orf = False
@@ -1300,16 +1371,24 @@ class Decompiler:
             elif 0x06 <= cc <= 0x0b or 0x0c <= cc <= 0x11:
                 b = pop(); a = pop(); base = 0x06 if cc <= 0x0b else 0x0c
                 k = 'real' if base == 0x0c else None
-                t = '%s %s %s' % (txt(a, k), R[cc - base], txt(b, k))
+                t = '(%s %s %s)' % (txt(a, k), R[cc - base], txt(b, k))
             elif 0x1b <= cc <= 0x20 or 0x21 <= cc <= 0x26:
                 b = pop(); a = pop(); base = 0x1b if cc <= 0x20 else 0x21
                 k = 'real' if base == 0x21 else (a.kind if isinstance(a, E) and a.kind in ('int', 'bool') else 'int')
-                t = '%s %s %s' % (txt(a), R[cc - base], txt(b, k))
+                t = '(%s %s %s)' % (txt(a), R[cc - base], self.cond_value(b, k))
             elif 0x27 <= cc <= 0x32 or 0x41 <= cc <= 0x4c:
                 b = pop(); a = pop()
                 base = {0x27: 0x27, 0x2d: 0x2d, 0x41: 0x41, 0x47: 0x47}[max(v for v in (0x27, 0x2d, 0x41, 0x47) if v <= cc)]
                 k = 'bool' if cc >= 0x41 else 'int'
-                t = '%s %s %s' % (txt(a), R[cc - base], txt(b, k))
+                t = '(%s %s %s)' % (txt(a), R[cc - base], self.cond_value(b, k))
+            elif cc == 0x01:                       # noeud de PATH : (1, durée, noeud) ; vérifié : f_node_t
+                n = pop(); tm = pop(); pop()
+                if isinstance(tm, Const) and tm.raw == 0:
+                    t = 'AT NODE[%s]' % txt(n, 'int')
+                elif getattr(tm, 'negof', None) is not None:
+                    t = 'TIME %s BEFORE NODE[%s]' % (wrap(tm.negof, PREC_ATOM, 'int'), txt(n, 'int'))
+                else:
+                    t = 'TIME %s AFTER NODE[%s]' % (wrap(tm, PREC_ATOM, 'int'), txt(n, 'int'))
             elif cc == 0x12:
                 n = pop(); t = 'ERROR[%s]' % ('*' if isinstance(n, Const) and n.raw == 0xffffffff else txt(n, 'int'))
             elif cc == 0x13:
@@ -1336,6 +1415,12 @@ class Decompiler:
                 p = pop(); a = pop(); t = '%s = %s' % (txt(a), txt(p))
             elif aa == 0x05:
                 r = pop(); t = txt(r)
+                if st and isinstance(st[-1], E) and str(st[-1].kind).startswith('with'):
+                    t = 'WITH %s %s' % (self.cond_with(st.pop()), t)   # WITH $PRIORITY = n routine
+            elif aa == 0x06:
+                n = pop(); t = 'SIGNAL SEMAPHORE[%s]' % txt(n, 'int')        # vérifié : f_cond_t
+            elif aa == 0x0a:
+                t = 'NOMESSAGE'
             elif aa in (0x0d, 0x0e):
                 n = pop(); t = '%s CONDITION[%s]' % ('ENABLE' if aa == 0x0d else 'DISABLE', txt(n, 'int'))
             elif aa == 0x04:
@@ -1344,10 +1429,10 @@ class Decompiler:
                 tm = pop(); p = pop(); t = 'PULSE %s FOR %s' % (txt(p), txt(tm, 'int'))
             elif aa in (0x1a, 0x09):
                 t = 'NOABORT' if aa == 0x1a else 'NOPAUSE'
-            elif aa in (0x1b, 0x1c, 0x07, 0x08, 0x11, 0x12, 0x0b, 0x16):
+            elif aa in (0x1b, 0x1c, 0x07, 0x08, 0x11, 0x12, 0x0b, 0x16, 0x13):
                 pop()
                 t = {0x1b: 'PAUSE', 0x1c: 'ABORT', 0x07: 'CANCEL', 0x08: 'STOP', 0x11: 'HOLD',
-                     0x12: 'UNHOLD', 0x0b: 'RESUME', 0x16: 'UNPAUSE'}[aa]
+                     0x12: 'UNHOLD', 0x0b: 'RESUME', 0x16: 'UNPAUSE', 0x13: 'CONTINUE'}[aa]
             else:
                 t = '?? action %02X' % aa
             if c is None: return False
@@ -1360,11 +1445,17 @@ class Decompiler:
             c = cnode()
             if c is None: return False
             c.done = True
+            if c.ckind == 'WAIT':                  # MOVE ..., WHEN ... : un 03 par clause, un seul 04
+                mi = max((j for j in range(len(st)) if isinstance(st[j], Motion)), default=None)
+                if mi is not None:
+                    for e in st[mi + 1:]:
+                        if isinstance(e, CondN) and e.ckind == 'WAIT':
+                            e.done = True
             if c.ckind == 'COND':
                 st.remove(c)
                 lines = ['CONDITION[%s]:%s' % (c.num, (' WITH ' + c.with_) if c.with_ else '')]
                 for (cs, acts, orf) in c.clauses:
-                    lines.append('\tWHEN %s DO %s' % ((' OR ' if orf else ' AND ').join(cs), ', '.join(acts)))
+                    lines.append(when_clause(cs, acts, orf))
                 lines.append('ENDCONDITION')
                 emit('\n'.join(lines), x.off)
             return True
@@ -1373,7 +1464,7 @@ class Decompiler:
                 if isinstance(st[j], CondN) and st[j].ckind == 'WAIT':
                     c = st.pop(j)
                     cs, _, orf = c.clauses[0]
-                    emit('WAIT FOR %s' % (' OR ' if orf else ' AND ').join(cs), x.off)
+                    emit(wrap_list(cs, ' OR ' if orf else ' AND ', 'WAIT FOR '), x.off)
                     return True
             return False
         SIMPLE_ST = {0x0d: 'ENABLE CONDITION[%s]', 0x0e: 'DISABLE CONDITION[%s]', 0x3c: 'PURGE CONDITION[%s]',
@@ -1443,6 +1534,16 @@ class Decompiler:
                 add(dname)
                 if any(v[2] == 0x00 for v in own):
                     add('-- attention : variables avec et sans indicateur %s (0x%02X) mélangées' % (dname[1:], fl_))
+        if not any(v[1] == '$GROUP' for v in pc.vars):
+            envs = []
+            for rr in pc.routines:
+                if rr['mod'] and rr['mod'] - 1 < len(pc.modules):
+                    mod = pc.modules[rr['mod'] - 1]
+                    ev = ENV_OF_MODULE.get(mod, mod.lower())
+                    if ev and ev not in envs:
+                        envs.append(ev)
+            for ev in envs or ['uif']:
+                add('%%ENVIRONMENT %s' % ev)
         unk = [(i, a[i]) for i in (6, 16, 19) if a[i]]
         if unk:
             add('-- attributs inconnus : %s' % unk)
@@ -1481,34 +1582,31 @@ class Decompiler:
                 tn = tc.name(ty)
                 note = '' if fl in (0x00, 0x02, 0x03, 0xfa, 0xfc, 0xfd) else '  -- indicateur de stockage inconnu 0x%02x' % fl
                 add('\t%s%s%s : %s%s' % (nm, where, frm, tn, note))
-        # déclarations de routines externes / avant (ordre de la table)
+        # déclarations de routines externes / avant : la table des routines suit l'ordre de
+        # première mention dans le source. Avant chaque corps, on déclare les routines qui le
+        # précèdent dans la table et n'ont pas encore été mentionnées (vérifié : f_routine_t).
         order = sorted(self.routines, key=lambda r: r.i0)
-        pos = {r.k: r.i0 for r in order}
-        fwd = set()
-        for r in order:
-            for j in range(r.i0, r.i1):
-                x = self.ins[j]
-                if x.op == 0xaa:
-                    k = x.u16()
-                    if k in pos and pos[k] > r.i0:
-                        fwd.add(k)
-        decl = []
-        for k, rr in enumerate(pc.routines):
-            if k == 0:
-                continue
-            if rr['mod'] == 0 and k in fwd:
-                decl.append((k, pc.name))
-            elif rr['mod'] != 0 and not self.is_builtin_routine(k):
-                decl.append((k, pc.modules[rr['mod'] - 1]))
-        if decl:
-            add('')
-        self.fwd = fwd
         byk = {r.k: r for r in self.routines}
-        for k, mod in decl:
-            rr = pc.routines[k]
-            names = byk[k].params if k in byk else None
-            add('ROUTINE %s%s FROM %s' % (rr['name'], self.sig(rr, names), mod))
-        for r in order:
+        fwd = set()
+        seen = {0}
+        plan = []                                  # (routine, [k à déclarer avant son corps])
+        mains = [r for r in order if r.is_main]
+        for r in [r for r in order if not r.is_main] + mains:
+            lim = len(pc.routines) if r.is_main else r.k     # avant BEGIN du programme : le reste
+            dk = [k for k in range(lim) if k not in seen and not self.is_builtin_routine(k)
+                  and (pc.routines[k]['mod'] != 0 or k in byk)]
+            seen.update(dk); seen.add(r.k)
+            fwd.update(k for k in dk if pc.routines[k]['mod'] == 0)
+            plan.append((r, dk))
+        self.fwd = fwd
+        for r, dk in plan:
+            if dk:
+                add('')
+                for k in dk:
+                    rr = pc.routines[k]
+                    mod = pc.name if rr['mod'] == 0 else pc.modules[rr['mod'] - 1]
+                    names = byk[k].params if k in byk else None
+                    add('ROUTINE %s%s FROM %s' % (rr['name'], self.sig(rr, names), mod))
             add('')
             if r.is_main:
                 first = self.first_line(r.body)

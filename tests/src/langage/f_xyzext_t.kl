@@ -1,0 +1,33 @@
+PROGRAM F_XYZEXT_T
+VAR
+    xyzextposG1  : XYZWPREXT IN GROUP[1]
+    xyzextposG2  : XYZWPREXT IN GROUP[2]
+    xyzextposG3  : XYZWPREXT IN GROUP[3]
+    xyzextposG4  : XYZWPREXT IN GROUP[4]
+    xyzconfig : CONFIG
+    posvar : POSITION
+    strtarget : STRING[254]
+    status : INTEGER
+BEGIN
+    CNV_STR_CONF('N U T, 0,0,0', xyzconfig,status)
+    CNV_CONF_STR(xyzconfig, strtarget)
+    xyzextposG1.config_data =  xyzconfig
+    xyzextposG1.X =  123.45
+    xyzextposG1.EXT1 =  100.5
+    posvar = POS(xyzextposG1.X, xyzextposG1.Y, xyzextposG1.Z, xyzextposG1.W, xyzextposG1.P, xyzextposG1.R,xyzconfig)
+    xyzextposG2 = xyzextposG1
+    IF (xyzextposG2 >=< xyzextposG1)THEN
+    ENDIF
+    IF(xyzextposG2.config_data.CFG_FLIP = TRUE)THEN
+    ENDIF
+    IF(xyzextposG2.config_data.CFG_LEFT = TRUE)THEN
+    ENDIF
+    IF(xyzextposG2.config_data.CFG_UP = TRUE)THEN
+    ENDIF
+    IF(xyzextposG2.config_data.CFG_FRONT = TRUE)THEN
+    ENDIF
+    IF(xyzextposG2.config_data.CFG_TURN_NO1 = 0)THEN
+    ENDIF
+    xyzextposG3 = xyzextposG1 : xyzextposG2
+    xyzextposG4 = xyzextposG1 : INV((xyzextposG2))
+END F_XYZEXT_T

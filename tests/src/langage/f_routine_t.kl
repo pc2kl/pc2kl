@@ -1,0 +1,110 @@
+PROGRAM F_ROUTINE_T
+TYPE
+  REC = STRUCTURE
+    a : INTEGER
+    s : STRING[10]
+  ENDSTRUCTURE
+VAR
+  gi : INTEGER
+  gr : REAL
+  gs : STRING[20]
+  gb : BOOLEAN
+  gp : POSITION
+  gx : XYZWPR
+  gj : JOINTPOS
+  gv : VECTOR
+  ga : ARRAY[5] OF INTEGER
+  gm : ARRAY[2,3] OF REAL
+  gc : REC
+  gt : ARRAY[3] OF REC
+
+ROUTINE fwd(x : INTEGER) : INTEGER FROM F_ROUTINE_T
+ROUTINE ext_r(x : INTEGER; s : STRING) FROM OTHERPROG
+
+ROUTINE noargs
+BEGIN
+  gi = gi + 1
+END noargs
+
+ROUTINE ints(a, b : INTEGER; VAR_c : REAL) : REAL
+VAR loc : REAL
+BEGIN
+  loc = a * VAR_c + b
+  RETURN(loc)
+END ints
+
+ROUTINE strs(s1 : STRING; s2 : STRING) : STRING
+BEGIN
+  RETURN(s1 + s2)
+END strs
+
+ROUTINE bools(b : BOOLEAN) : BOOLEAN
+BEGIN
+  RETURN(NOT b)
+END bools
+
+ROUTINE poss(p : POSITION; x : XYZWPR; j : JOINTPOS) : POSITION
+VAR lp : POSITION
+BEGIN
+  lp = p
+  RETURN(lp)
+END poss
+
+ROUTINE vecs(v : VECTOR) : VECTOR
+BEGIN
+  RETURN(v * 2)
+END vecs
+
+ROUTINE arrs(a : ARRAY OF INTEGER; m : ARRAY[*,*] OF REAL) : INTEGER
+VAR k, n : INTEGER
+BEGIN
+  n = 0
+  FOR k = 1 TO ARRAY_LEN(a) DO
+    n = n + a[k]
+  ENDFOR
+  m[1,2] = n
+  RETURN(n)
+END arrs
+
+ROUTINE recs(r : REC; t : ARRAY OF REC) : INTEGER
+BEGIN
+  r.a = t[1].a
+  RETURN(r.a)
+END recs
+
+ROUTINE recur(n : INTEGER) : INTEGER
+BEGIN
+  IF n <= 1 THEN
+    RETURN(1)
+  ENDIF
+  RETURN(n * recur(n - 1))
+END recur
+
+ROUTINE early(n : INTEGER)
+BEGIN
+  IF n > 0 THEN
+    RETURN
+  ENDIF
+  gi = n
+END early
+
+ROUTINE fwd
+BEGIN
+  RETURN(x + 1)
+END fwd
+
+BEGIN
+  noargs
+  gr = ints(1, gi, gr)
+  gr = ints(gi + 1, 2, 3.5)
+  gs = strs(gs, 'abc')
+  gb = bools(gb)
+  gp = poss(gp, gx, gj)
+  gv = vecs(gv)
+  gi = arrs(ga, gm)
+  gi = recs(gc, gt)
+  gi = recur(5) + fwd(gi)
+  early(gi)
+  gi = fwd(fwd(1))
+  ext_r(gi, 'x')
+END F_ROUTINE_T

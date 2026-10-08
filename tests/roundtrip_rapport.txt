@@ -1,27 +1,27 @@
-Aller-retour pc -> kl -> pc : 5904 programmes
-  IDENTIQUE      5904
+Aller-retour pc -> kl -> pc : 6387 programmes
+  IDENTIQUE      6387
 
 Par version :
-  V10.10-1   {'IDENTIQUE': 299}
-  V10.13-1   {'IDENTIQUE': 299}
-  V6.40-1    {'IDENTIQUE': 277}
-  V6.43-1    {'IDENTIQUE': 277}
-  V7.20-1    {'IDENTIQUE': 281}
-  V7.30-1    {'IDENTIQUE': 281}
-  V7.40-1    {'IDENTIQUE': 290}
-  V7.50-1    {'IDENTIQUE': 297}
-  V7.70-1    {'IDENTIQUE': 297}
-  V8.10-1    {'IDENTIQUE': 299}
-  V8.13-1    {'IDENTIQUE': 299}
-  V8.20-1    {'IDENTIQUE': 300}
-  V8.23-1    {'IDENTIQUE': 301}
-  V8.30-1    {'IDENTIQUE': 301}
-  V8.33-1    {'IDENTIQUE': 301}
-  V8.36-1    {'IDENTIQUE': 301}
-  V9.10-1    {'IDENTIQUE': 301}
-  V9.16-1    {'IDENTIQUE': 301}
-  V9.30-1    {'IDENTIQUE': 301}
-  V9.40-1    {'IDENTIQUE': 301}
+  V10.10-1   {'IDENTIQUE': 320}
+  V10.13-1   {'IDENTIQUE': 320}
+  V6.40-1    {'IDENTIQUE': 300}
+  V6.43-1    {'IDENTIQUE': 300}
+  V7.20-1    {'IDENTIQUE': 304}
+  V7.30-1    {'IDENTIQUE': 304}
+  V7.40-1    {'IDENTIQUE': 314}
+  V7.50-1    {'IDENTIQUE': 322}
+  V7.70-1    {'IDENTIQUE': 322}
+  V8.10-1    {'IDENTIQUE': 324}
+  V8.13-1    {'IDENTIQUE': 324}
+  V8.20-1    {'IDENTIQUE': 325}
+  V8.23-1    {'IDENTIQUE': 326}
+  V8.30-1    {'IDENTIQUE': 326}
+  V8.33-1    {'IDENTIQUE': 326}
+  V8.36-1    {'IDENTIQUE': 326}
+  V9.10-1    {'IDENTIQUE': 326}
+  V9.16-1    {'IDENTIQUE': 326}
+  V9.30-1    {'IDENTIQUE': 326}
+  V9.40-1    {'IDENTIQUE': 326}
 
 Détail des écarts :
 

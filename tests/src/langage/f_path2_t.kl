@@ -1,0 +1,42 @@
+PROGRAM F_PATH2_T
+TYPE
+ND = STRUCTURE
+    npos : XYZWPR IN GROUP[1]
+    spd  : INTEGER
+ENDSTRUCTURE
+HD = STRUCTURE
+    uf : POSITION
+    cnt : INTEGER
+ENDSTRUCTURE
+MYP = PATH NODEDATA = ND, PATHHEADER = HD
+VAR
+pa : PATH
+pb : MYP
+pc_ : PATH NODEDATA = ND
+st, n : INTEGER
+ROUTINE CPY(src: PATH; dst: PATH)
+VAR l_stat : INTEGER
+BEGIN
+    COPY_PATH(src, 0, 0, dst, l_stat)
+    WRITE(PATH_LEN(src), CR)
+END CPY
+ROUTINE CPY2(a: MYP; i : INTEGER; b: MYP) : INTEGER
+BEGIN
+    a[i].spd = b[1].spd
+    a.cnt = b.cnt + i
+    RETURN(PATH_LEN(a))
+END CPY2
+ROUTINE CPY3(a: PATH NODEDATA = ND; x : REAL)
+BEGIN
+    a[1].spd = ROUND(x)
+END CPY3
+BEGIN
+    CPY(pa, pa)
+    n = CPY2(pb, 2, pb)
+    CPY3(pc_, 1.5)
+    APPEND_NODE(pa, st)
+    INSERT_NODE(pb, 1, st)
+    DELETE_NODE(pb, 1, st)
+    pb[1].npos.x = 10
+    pb.uf = pb.uf
+END F_PATH2_T

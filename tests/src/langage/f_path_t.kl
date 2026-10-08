@@ -1,0 +1,43 @@
+PROGRAM F_PATH_T
+TYPE
+MY_PATH_DATA = STRUCTURE
+    path_pos    :XYZWPR IN GROUP[1]
+    ext_axi_pos :JOINTPOS1 IN GROUP[2]
+    group1_speed:INTEGER
+    group2_speed:INTEGER
+    MOTYPE      :INTEGER
+    MOTERM      :INTEGER
+ENDSTRUCTURE
+MY_PATH_HEAD = STRUCTURE
+    uframe  :POSITION
+    utool   :POSITION
+ENDSTRUCTURE
+MY_PATH_TYPE = PATH NODEDATA = MY_PATH_DATA, PATHHEADER = MY_PATH_HEAD
+VAR
+path_1 : PATH NODEDATA = MY_PATH_DATA, PATHHEADER = MY_PATH_HEAD
+path_2 : MY_PATH_TYPE
+path_3 : PATH NODEDATA = MY_PATH_DATA
+path_4 : PATH PATHHEADER = MY_PATH_HEAD
+var1   : GROUP_ASSOC
+var2   : COMMON_ASSOC
+var3   : PATH
+ROUTINE PTH_CPY(src_path: PATH; des_path: PATH)
+VAR
+node_indx :INTEGER
+do_it :BOOLEAN
+l_stat :INTEGER
+BEGIN
+    do_it = true
+    IF (do_it) THEN
+        COPY_PATH (src_path, 0,0, des_path, l_stat)
+        IF (l_stat <> 0) THEN
+            WRITE ('Error in COPY_PATH', l_stat, CR)
+        ELSE
+            WRITE ('Path Copy function Completed ',CR)
+        ENDIF
+    ELSE
+        WRITE ('Path Copy function canceled by choice',cr,cr)
+    ENDIF
+END PTH_CPY
+BEGIN
+END F_PATH_T

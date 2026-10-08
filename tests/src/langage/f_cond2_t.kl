@@ -1,0 +1,21 @@
+PROGRAM F_COND2_T
+VAR
+    i, j : INTEGER
+    r : REAL
+    b : BOOLEAN
+ROUTINE UPD
+BEGIN
+END UPD
+BEGIN
+    CONDITION[1]:
+        WHEN i > 100 DO UPD
+        WHEN i > j DO UPD
+        WHEN i > EVAL(j) DO UPD
+        WHEN i = EVAL(j * 2) DO UPD
+        WHEN r < EVAL(r + 1.5) DO UPD
+        WHEN r < 2.5 DO UPD
+        WHEN b = EVAL(b) DO UPD
+        WHEN DIN[1] AND i > 3 DO WITH $PRIORITY = 10 UPD, NOMESSAGE, CONTINUE
+        WHEN (i > 3) OR (j < EVAL(i - 1)) DO SIGNAL SEMAPHORE[2], UPD
+    ENDCONDITION
+END F_COND2_T

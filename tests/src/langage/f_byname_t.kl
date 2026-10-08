@@ -1,0 +1,15 @@
+PROGRAM F_BYNAME_T
+VAR
+  prog_name, var_name : STRING[20]
+  i, entry : INTEGER
+  r : REAL
+ROUTINE p(x : INTEGER; y : REAL)
+BEGIN
+  x = x + 1
+END p
+BEGIN
+  prog_name = 'BYNAME_T'
+  var_name = 'I'
+  p(BYNAME(prog_name, var_name, entry), r)
+  p(i, BYNAME('BYNAME_T', 'R', entry))
+END F_BYNAME_T

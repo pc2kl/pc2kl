@@ -1,0 +1,26 @@
+PROGRAM F_MOVETO_T
+VAR
+path1   :PATH
+posvar   :POSITION
+pos1   :XYZWPR
+pos2   :XYZWPR
+r1   :REAL
+v1   :VECTOR
+BEGIN
+    WITH $SPEED = 1000 MOVE NEAR pos1 BY +100
+    WITH $MOTYPE = CIRCULAR MOVE TO pos1 VIA pos2
+    WITH $UFRAME = posvar, $SPEED = 3000 ,$UTOOL = posvar MOVE TO pos1
+    MOVE TO pos1,
+        WHEN ERROR[*] DO
+            CANCEL
+    ENDMOVE
+    MOVE ALONG path1 NOWAIT
+    MOVE ALONG path1 NOWAIT,
+        WHEN AT NODE[1] DO
+        CANCEL
+    ENDMOVE
+    MOVE ABOUT v1 BY -100
+    MOVE AWAY r1
+    MOVE AXIS 1 BY -100
+    MOVE RELATIVE v1
+END F_MOVETO_T

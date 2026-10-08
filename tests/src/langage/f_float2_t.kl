@@ -1,0 +1,11 @@
+PROGRAM F_FLOAT2_T
+VAR r : REAL
+BEGIN
+  r = 1000000.0
+  r = 1.0E9
+  r = 12345678.0
+  r = 0.00001234
+  r = 1.0E-7
+  r = 3.0E38
+  r = 65536.5
+END F_FLOAT2_T
