@@ -839,10 +839,12 @@ class Decompiler:
     def call_args(self, st, params, name):
         """dépile les arguments d'un appel (params = liste de types)"""
         args = []
+        self.last_raw = []
         for t in reversed(params):
             if not st:
                 args.append('?'); continue
             a = st.pop()
+            self.last_raw.append(a)
             if st and isinstance(st[-1], Marker):
                 st.pop()
             k = self.tc.kind(t) if t is not None else None
@@ -1207,6 +1209,11 @@ class Decompiler:
             r = self.pc.routines[k]
             (self.calledaa if op == 0xaa else self.called31).add(k)
             args = self.call_args(st, r['params'], r['name'])
+            if op == 0x31 and args and st and isinstance(st[-1], Marker)                     and all(isinstance(a, Const) for a in self.last_raw):
+                # appel sans argument d'une routine dont tous les paramètres sont optionnels
+                # (CNCL_STP_MTN, MOTION_CTL) : 27 27 27 <défaut> ; un argument explicite donne
+                # 27 27 <valeur> (vérifié : TEST_ROUTINE d'un contributeur, f_optarg_t)
+                st.pop(); args = []
             s = '%s(%s)' % (r['name'], ', '.join(args)) if args else r['name']
             if r['ret'][0]:
                 push(E(s, PREC_ATOM, tc.kind(r['ret']), r['ret']))
@@ -1219,8 +1226,9 @@ class Decompiler:
                 nm, rt, ps, hidden = INTRINSICS[k]
                 params = [tuple(p[1]) for p in ps]
                 args = self.call_args(st, params, nm)
-                if hidden:                         # arguments ajoutés par le compilateur
-                    args = args[:len(args) - hidden]
+                if hidden:                         # argument optionnel (groupe) : le compilateur
+                    while hidden and args and args[-1] == '1':   # empile 1 s'il est omis ; une autre
+                        args.pop(); hidden -= 1    # valeur a été écrite (IN_RANGE(p, i), TEST_ROUTINE)
                 # supprimer GROUP_NO optionnel s'il vaut la valeur par défaut ? on garde tout
                 s = '%s(%s)' % (nm, ', '.join(args))
                 rt = tuple(rt)

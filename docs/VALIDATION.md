@@ -48,23 +48,23 @@ types or the routine table; such mutations went undetected. It was replaced on
 
 ## Results
 
-Strict comparison of the round trip, 8 October 2026 (current `pc2kl`, `compare_pc_strict`):
-**6,387 / 6,387 identical**.
+Strict comparison of the round trip, 12 October 2026 (current `pc2kl`, `compare_pc_strict`):
+**6,402 / 6,402 identical**.
 
 | Versions | Programs | Identical |
 |---|---|---|
 | V6.40, V6.43 | 300 each | 300 |
 | V7.20, V7.30 | 304 each | 304 |
 | V7.40 | 314 | 314 |
-| V7.50, V7.70 | 322 each | 322 |
-| V8.10, V8.13 | 324 each | 324 |
-| V8.20 | 325 | 325 |
-| V8.23 to V9.40 | 326 each | 326 |
-| V10.10, V10.13 | 320 each | 320 |
+| V7.50, V7.70 | 323 each | 323 |
+| V8.10, V8.13 | 325 each | 325 |
+| V8.20 | 326 | 326 |
+| V8.23 to V9.40 | 327 each | 327 |
+| V10.10, V10.13 | 321 each | 321 |
 
 The `WITH`, directive and `%INVISIBLE` suites (`pc_with`, `pc_dir`, `pc_inv` in the
 working corpus, 1,413 more `.pc` files) were run through the same round trip on
-8 October 2026: all identical.
+12 October 2026: all identical.
 
 History. When the strict comparator was introduced (30 September 2026), the previous
 version of `pc2kl` showed 22 differences, all fixed on 30 September – 1 October 2026:
@@ -87,6 +87,16 @@ them failed to recompile or differed (`HAND`, `FRAME` with three arguments, `AT 
 `MOVE RELATIVE` of a VECTOR, only the last `WHEN` of a `MOVE` kept, unknown condition
 actions and missing `EVAL`, mislabelled `COMMON_ASSOC`/`GROUP_ASSOC`, PATH parameters,
 `%ENVIRONMENT`, forward declarations of routines only called from the main program).
+
+On 12 October 2026 a contributor sent a program calling every built-in routine of the
+manual, with and without optional arguments (format 0x27, compiled with option packages).
+Decompiled with the 8 October version, it recompiled but differed: the group number of
+`IN_RANGE(p, i)` / `J_IN_RANGE(j, i)` was dropped, and `CNCL_STP_MTN` / `MOTION_CTL`
+without arguments came back with their default value written out. Both are fixed
+(see [FORMAT.md](FORMAT.md#optional-parameters-of-built-ins)) and covered by
+`tests/src/langage/f_optarg_t.kl`. The contributor's program itself is not part of the
+corpus; decompiled and recompiled with the same ROBOGUIDE configuration, it is identical
+to its source compiled with that configuration.
 
 The counts per version differ because some translators reject some tests (for example
 strings longer than 128 characters before V7.40, or `WITH` on `MOVE ALONG pth[1..2]` in

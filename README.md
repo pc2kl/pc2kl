@@ -76,7 +76,7 @@ are restored as `IN CMOS` / `IN SHADOW` on each variable, which recompiles to th
 ## Validation and limitations
 
 * Validated by round trip (decompile, recompile, compare) on about 325 test programs
-  compiled with 20 translator versions, V6.40 to V10.13 (6,387 `.pc` files). See
+  compiled with 20 translator versions, V6.40 to V10.13 (6,402 `.pc` files). See
   [docs/VALIDATION.md](docs/VALIDATION.md) for what is compared and the current results.
 * Constructs absent from the test corpus may not be recognised yet; unknown opcodes are
   reported explicitly rather than guessed. Decoding resumes at the next certain instruction

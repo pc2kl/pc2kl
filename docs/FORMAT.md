@@ -414,6 +414,23 @@ explicitly and recompiles identically. `FRAME(p1, p2, p3)` alone is a different 
 (`76 0A`, `tests/src/builtins/FRAME__3.kl`; `FRAME` with four arguments is `76 09`). A
 test named `NAME__n.kl` is a variant of `NAME` with `n` arguments for `derive_tables.py`.
 
+Two more cases were found in a program sent by a contributor on 12 October 2026
+(`tests/src/langage/f_optarg_t.kl`):
+
+* `IN_RANGE` and `J_IN_RANGE` have an optional group number. The corpus tests call them
+  with one argument, so `derive_tables.py` records the pushed `27 9D` as a *hidden*
+  argument. An explicit group (`IN_RANGE(p, i)`) is passed in its place; `pc2kl` now
+  drops the hidden argument only when it is the constant 1.
+* A routine whose parameters are all optional (`CNCL_STP_MTN`, `MOTION_CTL`), called
+  without arguments, pushes one more call marker than a call with the default value
+  written out: `27 27 27 <default> 31 nnnn` instead of `27 27 <value> 31 nnnn`. The
+  default itself depends on the robot configuration (0 without `robot.ini`, 255 with
+  the ROBOGUIDE cell used here). `pc2kl` writes such a call without arguments.
+
+Other omitted optional arguments are pushed exactly as the default value written out
+(`27 9D` for a group number), so they are restored explicitly (`CURPOS(i, j, 1)`) and
+recompile identically.
+
 ### %ENVIRONMENT
 
 Without `%ENVIRONMENT`, the translator loads its default environment, which declares

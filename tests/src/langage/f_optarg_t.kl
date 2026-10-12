@@ -1,0 +1,38 @@
+PROGRAM F_OPTARG_T
+-- arguments optionnels des routines intégrées (cas signalés par un contributeur)
+VAR
+  i1, i2, i3, i4, i5, status : INTEGER
+  b1 : BOOLEAN
+  s1, s2, s3, s4 : STRING[40]
+  p1, p2, p3 : XYZWPR
+  j1, j2 : JOINTPOS
+  cfg1 : CONFIG
+  f1 : FILE
+  va : ARRAY[10] OF STRING[20]
+BEGIN
+  b1 = IN_RANGE(p1)
+  b1 = IN_RANGE(p1, i1)
+  b1 = IN_RANGE(p1, 2)
+  b1 = J_IN_RANGE(j1)
+  b1 = J_IN_RANGE(j1, i1)
+  b1 = J_IN_RANGE(j1, 3)
+  CNCL_STP_MTN
+  CNCL_STP_MTN(i1)
+  CNCL_STP_MTN(0)
+  b1 = MOTION_CTL
+  b1 = MOTION_CTL(i1)
+  b1 = MOTION_CTL(0)
+  CREATE_VAR(s1, s2, s3, s4, i1, i2, i3, i4, status)
+  CREATE_VAR(s1, s2, s3, s4, i1, i2, i3, i4, status, i5)
+  SAVE(s1, s2, status)
+  SAVE(s1, s2, status, i1)
+  PROG_LIST(s1, i1, i2, i3, va, i4, status)
+  PROG_LIST(s1, i1, i2, i3, va, i4, status, i5)
+  j2 = CURJPOS(i1, i2)
+  j2 = CURJPOS(i1, i2, i3)
+  p2 = CURPOS(i1, i2)
+  p2 = FRAME(p1, p2, p3)
+  SET_FILE_ATR(f1, i1)
+  CNV_CNF_STRG(cfg1, s1, status)
+  CNV_CNF_STRG(cfg1, s1, status, i1)
+END F_OPTARG_T
